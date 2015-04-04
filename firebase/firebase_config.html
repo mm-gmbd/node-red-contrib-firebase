@@ -1,0 +1,182 @@
+<script type="text/x-red" data-template-name="firebase config" >
+
+    <div class="form-row">
+        <label for="node-config-input-firebaseurl"><i class="fa fa-cloud"></i> Firebase</label>
+        https://<input class="input-append-left" type="text" id="node-config-input-firebaseurl" placeholder="your-firebase" style="width: 28%">.firebaseio.com/
+    </div>
+
+    <!-- Select type -->
+    <div class="form-row">
+        <label for="loginType-select"><i class="fa fa-shield"></i> Auth Type</label>
+        <select id="loginType-select" style="width: 73%">
+            <option value="email">Email</option>
+            <option value="none">None</option>
+            <!-- <option value="anonymous">Anonymous</option> -->
+            <!-- <option value="customGenerated">Custom Token Generated with Secret</option>   //TODO: -->
+        </select>
+        <input type="hidden" id="node-config-input-loginType">
+    </div>
+
+
+    <!-- Custom login with master token-->
+    <div class="form-row login-row login-row-custom hidden" id="login-row-custom">
+        <label for="node-config-input-uid"><i class="fa fa-user"></i> User id</label>
+        <input class="input-append-left" type="text" id="node-config-input-uid" placeholder="your user id">
+    </div>
+    <div class="form-row login-row login-row-custom hidden" id="login-row-custom">
+        <label for="node-config-input-secret"><i class="fa fa-credit-card"></i> Secret</label>
+        <input class="input-append-left" type="password" id="node-config-input-secret" placeholder="your secret">
+    </div>
+
+
+    <!-- Email login -->
+    <div class="form-row login-row login-row-email hidden" id="login-row-email">
+        <label for="node-config-input-email"><i class="fa fa-envelope"></i> Email</label>
+        <input class="input-append-left" type="email" id="node-config-input-email" placeholder="your@email.com">
+    </div>
+    <div class="form-row login-row login-row-email hidden" id="login-row-email-password">
+        <label for="node-config-input-password"><i class="fa fa-lock"></i> Password</label>
+        <input class="input-append-left" type="password" id="node-config-input-password" placeholder="password">
+    </div>
+
+    <!--   <div id="alertRow" />  -->
+
+    <!-- Tips -->
+    <!-- <div class="form-tips">
+      <p>Enter your Firebase credentials above</p>
+    </div> -->
+
+</script>
+
+<script type="text/javascript">
+    (function () {
+
+        RED.nodes.registerType('firebase config', {
+            category: 'config',
+
+            color: "#ffb37a",
+
+            defaults: {
+              firebaseurl: {type: 'text'},
+              loginType: {type: 'text'}
+            },
+
+            credentials: {
+                uid: {type: 'text'},
+                secret: {type: 'password'},
+                email: {type: 'text'},
+                password: {type: 'password'},
+            },
+
+
+            label: function () {
+                //return typeof this.appid ? 'Firebase ' + this.appid : 'Firebase ' + this.email;
+                var str = 'firebase config Node Error'
+
+                if(this.firebaseurl)
+                  str = "https://"+this.firebaseurl+".firebaseio.com/"
+
+                //TODO: File node red bug on credentials not being set on this in the client before the label function is called
+                //TODO: BUG: Node-Red doesn't provide credentials as early as it provides defaults... Need to file a bug request so that we don't need to store data twice
+                if(this.credentials && this.loginType){
+                  switch (this.loginType) {
+                      case 'custom':  //TODO:
+                        //this.fbConnection.authorize(this.loginType, this.uid, this.secret);
+                        break;
+                      case 'email':
+                        if(this.credentials.email)
+                          str += " - " + this.credentials.email
+                        break;
+                      case 'anonymous': //TODO:
+                        break;
+                      case 'customGenerated': //TODO:
+                        break;
+                      case 'facebook': //TODO:
+                        break;
+                      case 'twitter': //TODO:
+                        break;
+                      case 'github': //TODO:
+                        break;
+                      case 'google': //TODO:
+                        break;
+                      case 'default': //TODO:
+                        break;
+                  }
+                }
+
+
+
+                return str
+            },
+
+            labelStyle: function () {
+                return this.name ? 'node_label_italic' : '';
+            },
+
+            oneditprepare: function () {
+                console.log("oneditprepare: firebase config") //Used for setting break points on the UI...
+
+                var $nodeConfigInputType = $('#node-config-input-loginType'),
+                    $loginTypeSelect = $('#loginType-select');
+                    firebaseConnections = null;
+
+
+                //TODO: BUG: We don't want to allow multiple config nodes to the same firebaseurl.  This attempts to prevent this (it is defeatable if two config nodes are created without deploying in the middle of them...)
+                // Have to think through how to do this.  The strategy I started developing will not allow you to update your config either...
+                // $.getJSON('firebase_connections',function(data) {
+                //     firebaseConnections = data
+                //
+                //     var urlOkay = true
+                //
+                //     $.each(data, function(i, url){
+                //         if(url == "https://"+$("#node-config-input-firebaseurl")+"firebaseio.com")
+                //           urlOkay = false;
+                //     });
+                //
+                //     if(urlOkay)
+                //       $("#node-config-dialog-ok").button("enable");
+                // });
+
+                // Disable the Add button until we are ready
+                //$("#node-config-dialog-ok").button("disable");
+
+                //Update the form if the login type changes
+                $loginTypeSelect.change(function () {
+                    var id = $(this).find('option:selected').val();
+                    $('.login-row').hide();
+                    $('.login-row-' + id).show();
+                    $nodeConfigInputType.val(id);
+                });
+
+                //TODO: Possible node-red bug? It looks like defaults don't get set automatically in config nodes?
+                $("#node-config-input-firebaseurl").val(this.firebaseurl)
+
+
+                $('.login-row').hide();
+                if (this.loginType) {
+                    $loginTypeSelect.val(this.loginType); //sets the drop down
+                    $nodeConfigInputType.val(this.loginType); //sets the hidden input
+                    $('.login-row-' + this.loginType).show();
+                } else {
+                    // set default
+                    $('.login-row-email').show();
+                    $loginTypeSelect.val('email');
+                    $nodeConfigInputType.val('email');
+                }
+
+
+
+                // This isn't working...
+                // $("#node-config-lookup-firebaseurl").blur(function() {
+                //   console.log("lost the focus...")
+                // });
+
+            //TODO: BUG: oneditsave: should really look at the return value and if it is a string, provide an alert to a user as to what went wrong and take you back to the edit dialogue box - I don't think Node-Red allows for this...
+
+
+            }, //end oneditprepare
+
+            exportable: false
+        });
+    })();
+</script>

@@ -122,6 +122,7 @@ module.exports = function(RED) {
                   childpath = msg.childpath
                 }
               }
+              childpath = childpath || "/"
 
               switch (method) {
                   case "set":

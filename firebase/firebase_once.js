@@ -78,11 +78,11 @@ module.exports = function(RED) {
 
 
           msg.eventType = eventType;
-          msg.childpath = childpath || "";
+          msg.childpath = childpath || "/";
           this.activeRequests.push(msg)
 
-          if(childpath){
-            this.config.fbConnection.fbRef.child(childpath).once(eventType, this.onFBData, this.onFBError, this);
+          if(msg.childpath){
+            this.config.fbConnection.fbRef.child(msg.childpath).once(eventType, this.onFBData, this.onFBError, this);
           }else{
             this.config.fbConnection.fbRef.once(eventType, this.onFBData, this.onFBError, this);
           }
@@ -106,8 +106,8 @@ module.exports = function(RED) {
             }
 
             // We need to unbind our callback, or we'll get duplicate messages when we redeploy
-            if(this.childpath)
-              this.config.fbConnection.fbRef.child(this.childpath).off(eventType, this.onFBData, this);
+            if(msg.childpath)
+              this.config.fbConnection.fbRef.child(msg.childpath).off(eventType, this.onFBData, this);
             else
               this.config.fbConnection.fbRef.off(eventType, this.onFBData, this);
           }

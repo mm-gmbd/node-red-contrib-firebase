@@ -106,6 +106,25 @@ module.exports = function(RED) {
 
         this.on('input', function(msg) {
           if(this.ready){
+
+            //TODO: this seems to be mostly working, but we really ought to do some more due diligence here...
+            //Try to convert to JSON object...
+            if (msg.hasOwnProperty("payload")) {
+              var payload = msg.payload;
+              if (!Buffer.isBuffer(payload)) {
+                  if (typeof payload === "object") {
+                      //this is what we want
+                  } else {
+                      try{
+                        payload = JSON.parse(payload)
+                      } catch(e){
+                        payload = msg.payload.toString();
+                      }
+                  }
+              }
+              msg.payload = payload
+            }
+
               var method = this.method
               if(method == "msg.method"){
                 if("method" in msg){

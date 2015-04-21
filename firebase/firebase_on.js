@@ -20,12 +20,13 @@ module.exports = function(RED) {
 
         this.onFBValue = function(snapshot, prevChildName) {
             //console.log("In onFBValue + " + JSON.stringify(snapshot.val()))
-            //TODO: Once Node-Red supports it, we should flash the Node when we receive this data.
 
             if(this.ignoreFirst == false){
               this.ignoreFirst = true
               return;
             }
+
+            this.status({fill:"blue",shape:"dot",text:"received data"});
 
             // if(!snapshot.exists()){
             //   //The code below will simply send a payload of nul if there is no data
@@ -41,11 +42,13 @@ module.exports = function(RED) {
               msg.previousChildName = prevChildName;
 
             this.send(msg);
+            setTimeout(this.setStatus, 500)  //Reset back to the Firebase status after 0.5 seconds
         }.bind(this);
 
         this.onFBError = function(error){
           this.error(error, {})
-          //TODO: Set status?
+          this.status({fill:"red",shape:"ring",text:error || "error"});
+          setTimeout(this.setStatus, 5000)  //Reset back to the Firebase status after 5 seconds
         }.bind(this);
 
         this.registerListeners = function(){
@@ -68,37 +71,69 @@ module.exports = function(RED) {
             this.config.fbConnection.fbRef.off(this.eventType, this.onFBValue, this);
         }.bind(this);
 
+        this.setStatus = function(error){
+          //set = state (depending on the deployment strategy, for newly deployed nodes, some of the events may not be refired...)
+          switch(this.config.fbConnection.lastEvent) {
+            case "connecting":
+              this.status({fill:"grey", shape:"ring", text:"connecting..."})
+              break;
+            case "connected":
+              this.status({fill:"green", shape:"ring", text:"connected"})
+              break;
+            case "disconnected":
+              this.status({fill:"red", shape:"ring", text:"disconnected"})
+              break;
+            case "authorized":
+              this.status({fill:"green", shape:"dot", text:"ready"})
+              break;
+            case "unauthorized":
+              this.status({fill:"red", shape:"dot", text:"unauthorized"})
+              break;
+            case "error":
+              this.status({fill:"red", shape:"ring", text:error || "error"}) //TODO: should we store the last error?
+              break;
+            case "closed":
+              this.status({fill: "gray", shape: "dot", text:"connection closed"})
+              break;
+            // case "undefined":
+            // case "null":
+            //   break;  //Config node not yet setup
+            default:
+              this.error("Bad lastEvent Data from Config Node - " + this.config.fbConnection.lastEvent)
+          }
+
+        }.bind(this)
 
         //this.config.fbConnection EventEmitter Handlers
         this.fbConnecting = function(){  //This isn't being called because its emitted too early...
-          this.status({fill:"grey", shape:"ring", text:"connecting..."})
+          this.setStatus();
         }.bind(this)
 
         this.fbConnected = function(){
-          this.status({fill:"green", shape:"ring", text:"connected"})
+          this.setStatus();
         }.bind(this)
 
         this.fbDisconnected = function(){
-          this.status({fill:"red", shape:"ring", text:"disconnected"})
+          this.setStatus();
         }.bind(this)
 
         this.fbAuthorized = function(authData){
-          this.status({fill:"green", shape:"dot", text:"ready"})
+          this.setStatus();
           this.registerListeners();
         }.bind(this)
 
         this.fbUnauthorized = function(){
-          this.status({fill:"red", shape:"dot", text:"unauthorized"})
+          this.setStatus();
           this.destroyListeners();
         }.bind(this)
 
         this.fbError = function(error){
-          this.status({fill:"red", shape:"ring", text:error})
+          this.setStatus(error);
           this.error(error, {})
         }.bind(this)
 
         this.fbClosed = function(error){
-          this.status({fill: "gray", shape: "dot", text:"connection closed"})
+          this.setStatus();
           this.destroyListeners();  //TODO: this is being called in too many places but better safe than sorry?  Really need to figure out execution flow of Node-Red and decide if we can only have it here instead of also in this.on("close")
         }.bind(this)
 
@@ -113,22 +148,7 @@ module.exports = function(RED) {
         this.config.fbConnection.on("closed", this.fbClosed)
 
         //set initial state (depending on the deployment strategy, for newly deployed nodes, some of the events may not be refired...)
-        switch(this.config.fbConnection.lastEvent) {
-          case "connecting":
-          case "connected":
-          case "disconnected":
-          case "authorized":
-          case "unauthorized":
-          case "error":
-          case "closed":
-            this["fb" + this.config.fbConnection.lastEvent.capitalize()](this.config.fbConnection.lastEventData)  //Javascript is really friendly about sending arguments to functions...
-            break;
-          // case "undefined":
-          // case "null":
-          //   break;  //Config node not yet setup
-          default:
-            this.error("Bad lastEvent Data from Config Node - " + this.config.fbConnection.lastEvent)
-        }
+        this["fb" + this.config.fbConnection.lastEvent.capitalize()](this.config.fbConnection.lastEventData)  //Javascript is really friendly about sending arguments to functions...
 
         this.on('close', function() {
           this.destroyListeners();

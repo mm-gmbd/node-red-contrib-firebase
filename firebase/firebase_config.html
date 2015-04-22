@@ -10,6 +10,7 @@
         <label for="loginType-select"><i class="fa fa-shield"></i> Auth Type</label>
         <select id="loginType-select" style="width: 73%">
             <option value="email">Email</option>
+            <option value="jwt">JSON Web Token</option>
             <option value="none">None</option>
             <!-- <option value="anonymous">Anonymous</option> -->
             <!-- <option value="customGenerated">Custom Token Generated with Secret</option>   //TODO: -->
@@ -18,11 +19,12 @@
     </div>
 
 
-    <!-- Custom login with master token-->
-    <div class="form-row login-row login-row-custom hidden" id="login-row-custom">
-        <label for="node-config-input-uid"><i class="fa fa-user"></i> User id</label>
-        <input class="input-append-left" type="text" id="node-config-input-uid" placeholder="your user id">
+    <!-- Custom login -->
+    <div class="form-row login-row login-row-custom login-row-jwt hidden" id="login-row-custom">
+        <label for="node-config-input-uid"><i class="fa fa-user"></i> Unique ID</label>
+        <input class="input-append-left" type="text" id="node-config-input-uid" placeholder="token">
     </div>
+    <!-- Custom login with new token generated from master-->
     <div class="form-row login-row login-row-custom hidden" id="login-row-custom">
         <label for="node-config-input-secret"><i class="fa fa-credit-card"></i> Secret</label>
         <input class="input-append-left" type="password" id="node-config-input-secret" placeholder="your secret">
@@ -80,8 +82,8 @@
                 //TODO: BUG: Node-Red doesn't provide credentials as early as it provides defaults... Need to file a bug request so that we don't need to store data twice
                 if(this.credentials && this.loginType){
                   switch (this.loginType) {
-                      case 'custom':  //TODO:
-                        //this.fbConnection.authorize(this.loginType, this.uid, this.secret);
+                      case 'jwt':
+                        str += " - JSON Web Token"
                         break;
                       case 'email':
                         if(this.credentials.email)

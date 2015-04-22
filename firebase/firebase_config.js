@@ -74,13 +74,12 @@ module.exports = function (RED) {
                           this.emit("authorized");
                           //this.fbRef.offAuth(this.onAuth, this);
                           break;
-                      case 'custom':
+                      case 'jwt':
                           this.fbRef.authWithCustomToken(uid, this.onLoginAuth.bind(this))
                           this.fbRef.onAuth(this.onAuth, this);
-
                           break;
                       case 'customGenerated':
-                        //TODO:  this.fbRef.authWithCustomToken(this.credentials.uid, onCustomToken.bind(this))
+                        //TODO:  this.fbRef.authWithCustomToken(this.credentials.uid, this.onLoginAuth.bind(this))
                         break;
 
                       case 'email':
@@ -255,8 +254,8 @@ module.exports = function (RED) {
             case 'none': //TODO:
               this.fbConnection.authorize(this.loginType);
               break;
-            case 'custom':  //TODO:
-              //this.fbConnection.authorize(this.loginType, this.uid, this.secret);
+            case 'jwt':  //TODO:
+              this.fbConnection.authorize(this.loginType, this.uid);
               break;
             case 'email':
               this.fbConnection.authorize(this.loginType, this.email, this.password);

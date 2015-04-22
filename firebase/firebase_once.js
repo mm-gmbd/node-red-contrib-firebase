@@ -4,16 +4,17 @@ module.exports = function(RED) {
     var urllib = require("url");
 
 
+
     function FirebaseOnce(n) {
         RED.nodes.createNode(this,n);
 
         this.config = RED.nodes.getNode(n.firebaseconfig);
         this.childpath = n.childpath;
         this.eventType = n.eventType;
+        this.queries = n.queries;
 
         this.activeRequests = [];
         this.ready = false;
-        this.authData = null;
 
         // Check credentials
         if (!this.config) {
@@ -21,6 +22,14 @@ module.exports = function(RED) {
             this.error('You need to setup Firebase credentials!');
             return
         }
+
+        // for (var i=0; i<this.queries.length; i+=1) {
+        //     var query = this.queries[i];
+        //     if (!isNaN(Number(query.v))) {
+        //       query.v = Number(query.v);
+        //       query.v2 = Number(query.v2);
+        //     }
+        // }
 
         this.validEventTypes = {
           "value": true,
@@ -90,16 +99,10 @@ module.exports = function(RED) {
           this.activeRequests.push(msg)
 
           if(msg.eventType == "shallow_query"){
-            this.shallowQuery(msg)
+            this.shallowQuery(msg)  //TODO: https://www.firebase.com/docs/rest/guide/retrieving-data.html#section-rest-ordered-data and https://www.firebase.com/docs/rest/guide/retrieving-data.html#section-rest-queries
           } else {
-            this.status({fill:"blue",shape:"dot",text:"requesting from firebase..."});
-            if(msg.childpath){
-              this.config.fbConnection.fbRef.child(msg.childpath).once(eventType, this.onFBData, this.onFBError, this);
-            }else{
-              this.config.fbConnection.fbRef.once(eventType, this.onFBData, this.onFBError, this);
-            }
+            this.fbOnce(eventType, msg);
           }
-
 
         }.bind(this);
 
@@ -128,7 +131,55 @@ module.exports = function(RED) {
           }
         }.bind(this);
 
-        this.shallowQuery = function(msg){
+        this.fbOnce = function(eventType, msg){
+          this.status({fill:"blue",shape:"dot",text:"requesting from firebase..."});
+
+          //Create the firebase reference to the path
+          var ref
+          if(msg.childpath){
+            ref = this.config.fbConnection.fbRef.child(msg.childpath)
+          }else{
+            ref = this.config.fbConnection.fbRef
+          }
+
+
+          //apply the queries
+          for (var i=0; i<this.queries.length; i+=1) {
+              var query = this.queries[i];
+              var val
+
+              switch(query.t){
+                case "orderByKey":
+                case "orderByValue":
+                case "orderByPriority":
+                  ref = ref[query.t]()  //No args
+                  break;
+
+                case "orderByChild":
+                case "startAt":
+                case "endAt":
+                case "equalTo":
+                case "limitToFirst":
+                case "limitToLast":
+                  //try to convert to native type for bools, ints, etc.
+                  try{ val = JSON.parse(query.v.toLowerCase() || query.v) }
+                  catch(e){ val = query.v}
+
+                  ref = ref[query.t](val) //TODO: no error checking...
+                  break;
+
+                default:
+                  //TODO:
+                  break;
+              }
+
+
+          }
+
+          ref.once(eventType, this.onFBData, this.onFBError, this);
+        }.bind(this)
+
+        this.shallowQuery = function(msg){  //Could we use the REST Streaming API and do shallow queries in firebase.on()? Update - currently firebase doesn't support shallow and query args in the same request
           this.status({fill:"blue",shape:"dot",text:"shallow_query requesting..."});
 
           // make sure the path starts with '/'
@@ -139,8 +190,48 @@ module.exports = function(RED) {
           msg.href = this.config.firebaseurl + childpath
           var url =  msg.href + ".json?shallow=true"
 
-          if(this.authData && this.authData.token)
-            url += "&auth=" + this.authData.token
+          if(this.config.fbConnection.uid)
+            url += "&auth=" + this.config.fbConnection.uid
+
+          //apply the queries
+          for (var i=0; i<this.queries.length; i+=1) {
+              var query = this.queries[i];
+              var val
+
+              //try to convert to native type for bools, ints, etc.
+              try{ val = JSON.parse(query.v.toLowerCase() || query.v) }
+              catch(e){ val = query.v}
+
+              switch(query.t){
+                case "orderByChild":
+                  url += '&orderBy="' + val + '"'
+                  break;
+                case "orderByKey":
+                  url += '&orderBy="$key"'
+                  break;
+                case "orderByValue":
+                  url += '&orderBy="$value"'
+                  break;
+                case "orderByPriority":
+                  url += '&orderBy="$priority"'
+                  break;
+
+                case "startAt":
+                case "endAt":
+                case "equalTo":
+                case "limitToFirst":
+                case "limitToLast":
+                  if (typeof val == 'string' || val instanceof String)
+                    url += '&' + query.t + '="' + val + '"'
+                  else
+                    url += '&' + query.t + '='+ val
+                  break;
+
+                default:
+                  //TODO:
+                  break;
+              }
+          }
 
           var opts = urllib.parse(url);
           opts.method = "GET";;
@@ -225,7 +316,6 @@ module.exports = function(RED) {
           // this.log("authorized: " + JSON.stringify(authData))
           this.status({fill:"green", shape:"dot", text:"ready"})
           this.ready = true;
-          this.authData = authData
         }.bind(this)
 
         this.fbUnauthorized = function(){
@@ -233,7 +323,6 @@ module.exports = function(RED) {
           this.status({fill:"red", shape:"dot", text:"unauthorized"})
           this.ready = false;
           this.destroyListeners();
-          this.authData = null;
         }.bind(this)
 
         this.fbError = function(error){

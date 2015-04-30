@@ -65,7 +65,7 @@ module.exports = function(RED) {
 
         this.onFBError = function(error){
           this.error(error, {})
-          this.status({fill:"red",shape:"ring",text:error || "error"});
+          this.status({fill:"red",shape:"ring",text:error.code || "error"});
           setTimeout(this.setStatus, 5000)  //Reset back to the Firebase status after 5 seconds
         }.bind(this);
 

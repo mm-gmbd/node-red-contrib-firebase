@@ -115,18 +115,18 @@ For more information, feedback, or community support on Node-Red, see the <A HRE
 
 - Code cleanup and commenting (using jsDoc?)
 
+- Make some errors "sticky" so we don't report innappropriate status in case the page is loaded after initial deploy as the errors could be missed later and make debugging flows difficult (need to come up with a list of what is/isn't recoverable and under what conditions...)
+
 - Once Firebase allows multiple references to have different authentications, we will need to change the singleton architecture that we have in place currently...
 
 - Validation on HTML and Javascript, ensuring that only a single firebaseurl is allowed in a config node at a time (due to the way firebase auth works)
 
 - Add ability to set .priorities with firebase_modify nodes (none, timestamp, number, string, msg.priority, etc.)
 
-- Extend .on and .once to optionally allow for Firebase queries
+- Extend .on to optionally allow for Firebase queries
   orderby*, startAt (value and key for orderbypriority), endAt (value and key for orderbypriority), equalTo, limitToFirst, limitToLast, limit, etc.
 
-- Checkbox for shallow queries in .once (this will need to use the Firebase REST API since that is the only way to execute a shallow query currently)
-
-- Add support for all of Firebase's Authentication strategies (including anonymous, custom token, facebook, twitter, etc.)
+- Add support for remaining Firebase Authentication strategies including facebook, twitter, GitHub and Google. (the twitter Node likely should provide good inspiration for how to do this)
 
 - Add support for .ondisconnect to allow nodes to manage presence
 

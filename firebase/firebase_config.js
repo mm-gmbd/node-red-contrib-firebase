@@ -4,6 +4,7 @@
 module.exports = function (RED) {
     'use strict';
     var Firebase = require('firebase');
+    var FirebaseTokenGenerator = require("firebase-token-generator");
     var events = require("events");
 
     // Firebase Full Error Listing - https://www.firebase.com/docs/web/guide/user-auth.html#section-full-error
@@ -49,8 +50,8 @@ module.exports = function (RED) {
                 fbRef: new Firebase(firebaseurl),
                 authExpiration: null,
                 loginType: null,
-                uid: null,
-                password: null,
+                secret: null,
+                passORuid: null,  //TODO: Probably should clean this up similair to the config node to make it less confusing what is going on...
                 nodeCount: 0,
                 lastEvent: null,
                 lastEventData: null,
@@ -64,10 +65,10 @@ module.exports = function (RED) {
                   this._emitter.emit(a,b)
                 },
 
-                authorize: function(loginType, uid, password){
+                authorize: function(loginType, secret, passORuid){
                   this.loginType = loginType
-                  this.uid = uid
-                  this.password = password
+                  this.secret = secret
+                  this.passORuid = passORuid
 
                   switch (loginType) {
                       case 'none':
@@ -75,22 +76,37 @@ module.exports = function (RED) {
                           //this.fbRef.offAuth(this.onAuth, this);
                           break;
                       case 'jwt':
-                          this.fbRef.authWithCustomToken(uid, this.onLoginAuth.bind(this))
+                          this.fbRef.authWithCustomToken(secret, this.onLoginAuth.bind(this))
+                          this.fbRef.onAuth(this.onAuth, this);
+                          break;
+                      case 'anonymous':
+                          this.fbRef.authAnonymously(this.onLoginAuth.bind(this));
                           this.fbRef.onAuth(this.onAuth, this);
                           break;
                       case 'customGenerated':
-                        //TODO:  this.fbRef.authWithCustomToken(this.credentials.uid, this.onLoginAuth.bind(this))
-                        break;
+                          var tokenGenerator = new FirebaseTokenGenerator(secret);
+                            // expires (Number) - A timestamp (as number of seconds since the epoch) denoting the time after which this token should no longer be valid.
+                            // notBefore (Number) - A timestamp (as number of seconds since the epoch) denoting the time before which this token should be rejected by the server.
+                            // admin (Boolean) - Set to true if you want to disable all security rules for this client. This will provide the client with read and write access to your entire Firebase.
+                            // debug (Boolean) - Set to true to enable debug output from your security rules. This debug output will be automatically output to the JavaScript console. You should generally not leave this set to true in production (as it slows down the rules implementation and gives your users visibility into your rules), but it can be helpful for debugging.
+                            var token = tokenGenerator.createToken({uid: passORuid, generator: "node-red"});
+
+                            this.fbRef.authWithCustomToken(token, this.onLoginAuth.bind(this))
+                            this.fbRef.onAuth(this.onAuth, this);
+                            break;
 
                       case 'email':
                           this.fbRef.authWithPassword({
-                            email: uid,
-                            password: password
-                          }, this.onLoginAuth.bind(this))
+                              email: secret,
+                              password: passORuid
+                            }, this.onLoginAuth.bind(this))
 
                           this.fbRef.onAuth(this.onAuth, this);
-
                           break;
+                      // default:
+                      //   console.log("ERROR: Invalid loginType in firebase " + this.firebaseurl + " config - " + this.loginType)
+                      //   this.status({fill:"red", shape:"ring", text:"invalid loginType"})
+                      //   break;
                   }
                 },
 
@@ -119,7 +135,7 @@ module.exports = function (RED) {
                       if(this.authExpiration.getTime()-10000 <= now.getTime()){  //TODO: Do some research on this, we are subtracting 10 seconds - Firebase gets a little greedy with expirations (perhaps this is because of clock differences and network latencies?)
                         //Auth has expired - need to reauthorize
                         this.authExpiration = null;
-                        this.authorize(this.loginType, this.uid, this.password) //Single Shot Reauth attempt
+                        this.authorize(this.loginType, this.secret, this.passORuid) //Single Shot Reauth attempt
                       }
                     }
 
@@ -143,7 +159,8 @@ module.exports = function (RED) {
                     //     error = "Error logging user in: " + error.toString();
                     // }
                     this.emit("error", error.code);  //TODO: evaluate being verbose vs. using the error.code...
-                  } //onAuth handles success conditions
+                  } //else //onAuth handles success conditions
+                      //console.log("onLoginAuth Success: Logged into  " + this.firebaseurl + " as " + JSON.stringify(authData))
                 }
 
                 //TODO: wrap the firebase .on events here?
@@ -236,7 +253,7 @@ module.exports = function (RED) {
         }.bind(this))
 
         this.fbConnection.on("authorized", function(authData){
-          //this.log("authorized to " + this.firebaseurl + " as " + JSON.stringify(authData))
+          this.log("authorized to " + this.firebaseurl + (authData ? " as " + JSON.stringify(authData) : "without auth"))
         }.bind(this))
 
         this.fbConnection.on("unauthorized", function(){
@@ -251,18 +268,18 @@ module.exports = function (RED) {
         }.bind(this))
 
         switch (this.loginType) {
-            case 'none': //TODO:
+            case 'none':
+            case 'anonymous':
               this.fbConnection.authorize(this.loginType);
               break;
             case 'jwt':  //TODO:
-              this.fbConnection.authorize(this.loginType, this.uid);
+              this.fbConnection.authorize(this.loginType, this.secret);
               break;
             case 'email':
               this.fbConnection.authorize(this.loginType, this.email, this.password);
               break;
-            case 'anonymous': //TODO:
-              break;
-            case 'customGenerated': //TODO:
+            case 'customGenerated':
+            this.fbConnection.authorize(this.loginType, this.secret, this.uid);
               break;
             case 'facebook': //TODO:
               break;

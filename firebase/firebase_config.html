@@ -9,25 +9,25 @@
     <div class="form-row">
         <label for="loginType-select"><i class="fa fa-shield"></i> Auth Type</label>
         <select id="loginType-select" style="width: 73%">
+            <option value="none">None</option>
+            <option value="anonymous">Anonymous</option>
             <option value="email">Email</option>
             <option value="jwt">JSON Web Token</option>
-            <option value="none">None</option>
-            <!-- <option value="anonymous">Anonymous</option> -->
-            <!-- <option value="customGenerated">Custom Token Generated with Secret</option>   //TODO: -->
+            <option value="customGenerated">Custom Token Generated with Secret</option>
         </select>
         <input type="hidden" id="node-config-input-loginType">
     </div>
 
 
     <!-- Custom login -->
-    <div class="form-row login-row login-row-custom login-row-jwt hidden" id="login-row-custom">
-        <label for="node-config-input-uid"><i class="fa fa-user"></i> Unique ID</label>
+    <div class="form-row login-row login-row-customGenerated hidden">
+        <label for="node-config-input-uid"><i class="fa fa-user"></i> Unique ID</label> <!-- //TODO: Change these labels depending on the strategy used to make them make more sense -->
         <input class="input-append-left" type="text" id="node-config-input-uid" placeholder="token">
     </div>
     <!-- Custom login with new token generated from master-->
-    <div class="form-row login-row login-row-custom hidden" id="login-row-custom">
-        <label for="node-config-input-secret"><i class="fa fa-credit-card"></i> Secret</label>
-        <input class="input-append-left" type="password" id="node-config-input-secret" placeholder="your secret">
+    <div class="form-row login-row login-row-customGenerated login-row-jwt hidden">
+        <label for="node-config-input-secret"><i class="fa fa-key"></i> Secret</label>
+        <input class="input-append-left" type="password" id="node-config-input-secret" placeholder="firebase secret"> <!-- //TODO: Add a show button like on the forge? -->
     </div>
 
 
@@ -89,7 +89,8 @@
                         if(this.credentials.email)
                           str += " - " + this.credentials.email
                         break;
-                      case 'anonymous': //TODO:
+                      case 'anonymous':
+                        str += " - Anonymous"
                         break;
                       case 'customGenerated': //TODO:
                         break;

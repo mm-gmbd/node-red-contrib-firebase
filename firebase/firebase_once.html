@@ -30,8 +30,9 @@
       <i class="fa fa-filter"></i> Query Parameters
     </div>
 
+    <!-- //TODO: this node would be formatted nicer if #node-inpu-query-container-div was hidden until a query was added (or already present)... -->
     <div class="form-row node-input-query-container-row" style="margin-bottom: 0px;">
-        <div id="node-input-query-container-div" style="box-sizing: border-box; border-radius: 5px; height: 310px; padding: 5px; border: 1px solid #ccc; overflow-y:scroll;">
+        <div id="node-input-query-container-div" style="box-sizing: border-box; border-radius: 5px; height: 260px; padding: 5px; border: 1px solid #ccc; overflow-y:scroll;">
             <ol id="node-input-query-container" style=" list-style-type:none; margin: 0;"></ol>
         </div>
     </div>
@@ -125,6 +126,9 @@
                 //{v:"limit", t:"limit"}  //deprecated
 
             ];
+
+            //TODO: - Improve query support logic to not allow for invalid input.
+            //TODO: hide query parameters if shallow_query is the event type (since they are not supported...)
 
             function generatequery(i,query) {
                 var container = $('<li/>',{style:"background: #fff; margin:0; padding:8px 0px; border-bottom: 1px solid #ccc;"});

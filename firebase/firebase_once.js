@@ -152,7 +152,7 @@ module.exports = function(RED) {
                 case "orderByKey":
                 case "orderByValue":
                 case "orderByPriority":
-                  ref = ref[query.t]()  //No args
+                  ref = ref[query.t]()  //No args //TODO: BUG: Update HTML to hide box for these 3...
                   break;
 
                 case "orderByChild":
@@ -190,8 +190,8 @@ module.exports = function(RED) {
           msg.href = this.config.firebaseurl + childpath
           var url =  msg.href + ".json?shallow=true"
 
-          if(this.config.fbConnection.uid)
-            url += "&auth=" + this.config.fbConnection.uid
+          if(this.config.fbConnection.passORuid)
+            url += "&auth=" + this.config.fbConnection.passORuid
 
           //apply the queries
           for (var i=0; i<this.queries.length; i+=1) {
@@ -237,6 +237,7 @@ module.exports = function(RED) {
           opts.method = "GET";;
           //opts.headers = {};
 
+          //TODO: BUG: There needs to be a request.ontimeout
           var req = https.request(opts,function(res) {
               res.setEncoding('utf8');
               msg.statusCode = res.statusCode;

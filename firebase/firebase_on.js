@@ -9,6 +9,7 @@ module.exports = function(RED) {
         this.atStart = n.atStart;
         this.eventType = n.eventType
 
+        this.ready = false;
         this.ignoreFirst = this.atStart;
 
         // Check credentials
@@ -54,6 +55,10 @@ module.exports = function(RED) {
         this.registerListeners = function(){
           //this.log("Registering Listener for " + this.config.firebaseurl + (this.childpath || ""))
 
+          if(this.ready == true)
+            return  //Listeners are already created
+
+          this.ready = true;
           this.ignoreFirst = this.atStart;  //Reset if we are re-registering listeners
 
           if(this.childpath){
@@ -64,6 +69,8 @@ module.exports = function(RED) {
         }.bind(this);
 
         this.destroyListeners = function(){
+          this.ready = false;
+
           // We need to unbind our callback, or we'll get duplicate messages when we redeploy
           if(this.childpath)
             this.config.fbConnection.fbRef.child(this.childpath).off(this.eventType, this.onFBValue, this);

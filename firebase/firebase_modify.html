@@ -22,6 +22,11 @@
     </div>
 
     <div class="form-row">
+      <label for="node-input-value"><i class="fa fa-file-text-o"></i> Value</label>
+      <input id="node-input-value" autocomplete="off" type="text">
+    </div>
+
+    <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
@@ -79,10 +84,12 @@
             name: {value: ''},      //  along with default values.
             firebaseconfig:  {type:'firebase config',required:true},
             childpath: {value: '', required: false},
-            method: {value: 'set', required: true}
+            method: {value: 'set', required: true},
+            value: {value:'msg.payload', required: true}
         },
         color: '#ffb37a',
         icon: 'firebase.png',       // saved in  icons/myicon.png
+        align: 'right',
         inputs: 1,                  // set the number of inputs - only 0 or 1
         outputs: 0,                 // set the number of outputs - 0 to n
 
@@ -102,8 +109,29 @@
                    childpath + method + "()" ||
                    "firebase" + method + "()";
         },
+
         labelStyle: function () {   // sets the class to apply to the label
             return this.name ? "node_label_italic" : "";
-        }
+        },
+
+        oneditprepare: function(){
+          var defaultValues = [
+            "msg.payload",
+            //TODO: Firebase Server Time needs to go here...
+          ];
+
+          $('#node-input-value').autocomplete({
+            source: defaultValues,
+            minLength: 0
+          });
+
+          $('#node-input-value').on('focusin', function(){
+            $(this).autocomplete("search", "");
+          });
+
+          $('#node-input-value').on('focusout', function(){
+            $(this).autocomplete("close");
+          });
+        },
     });
 </script>

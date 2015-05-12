@@ -105,64 +105,33 @@
         },
 
         oneditprepare: function(){
-          // $.getScript('firebase/js/typeahead.bundle.js')
-          $.getScript('firebase/js/bootstrap3-typeahead.min.js')
-            .done(function(data, textStatus, jqxhr) {
-              // console.log("here")
-              // constructs the suggestion engine
-              // var valuesBloodhound = new Bloodhound({
-              //   datumTokenizer: Bloodhound.tokenizers.whitespace,
-              //   queryTokenizer: Bloodhound.tokenizers.whitespace,
-              //   local: ["msg.payload", "Firebase.ServerValue.TIMESTAMP"]
-              // });
+          var defaultValues = [
+            "msg.payload",
+            "Firebase.ServerValue.TIMESTAMP"
+          ];
 
-              // var substringMatcher = function(strs) {
-              //   return function findMatches(q, cb) {
-              //     var matches, substringRegex;
-              //
-              //     // an array that will be populated with substring matches
-              //     matches = [];
-              //
-              //     // regex used to determine if a string contains the substring `q`
-              //     substrRegex = new RegExp(q, 'i');
-              //
-              //     // iterate through the pool of strings and for any string that
-              //     // contains the substring `q`, add it to the `matches` array
-              //     $.each(strs, function(i, str) {
-              //       if (substrRegex.test(str)) {
-              //         matches.push(str);
-              //       }
-              //     });
-              //
-              //     cb(matches);
-              //   };
-              // };
-              // $(document).on('typeahead:opened', function(event, datum) {
-              //   var width = $(event.target).width();
-              //   $('.dropdown-menu').width(width);
-              // });
-              //
-              $("#node-input-value").typeahead({ source: ["msg.payload", "Firebase.ServerValue.TIMESTAMP"]})//.on('typeahead:opened',function(){$('.twitter-typeahead').css('width',"100%");})
+          $('#node-input-value').autocomplete({
+            source: defaultValues,
+            minLength: 0
+          });
 
-              // $('#node-input-value').typeahead(null, {
-              //   name: 'values',
-              //   source: valuesBloodhound
-              //   // source: substringMatcher(["msg.payload", "Firebase.ServerValue.TIMESTAMP"])
-              // });
+          $('#node-input-value').on('focusin', function(){
+            $(this).autocomplete("search", "");
+            //$(this).autocomplete("search", $(this).val());
+          });
 
-            })
-            .fail(function(jqxhr, settings, exception ) {
-              console.log("failed");
-              console.log(exception);
-              console.log(exception.stack);
-            });
+          $('#node-input-value').on('focusout', function(){
+            $(this).autocomplete("close");
+          });
         },
 
         oneditsave: function(){
-          if(this.value === "msg.payload")
+          // console.log("Method -- "+$('#node-input-method').val().trim())
+          if ($('#node-input-value').val().trim() === "msg.payload" || $('#node-input-method').val().trim() === "msg.method"){
             this.inputs = 1;
-          else
+          } else {
             this.inputs = 0;
+          }
         }
 
     });

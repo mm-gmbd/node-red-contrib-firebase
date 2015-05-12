@@ -23,7 +23,8 @@
       "firebase_config": "firebase/firebase_config.js",
       "firebase_modify": "firebase/firebase_modify.js",
       "firebase_once": "firebase/firebase_once.js",
-      "firebase_on": "firebase/firebase_on.js"
+      "firebase_on": "firebase/firebase_on.js",
+      "firebase_ondisconnect": "firebase/firebase_ondisconnect.js"
     }
   },
   "scripts": {

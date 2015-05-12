@@ -182,7 +182,7 @@ module.exports = function (RED) {
                   } //else //onAuth handles success conditions
                       //console.log("onLoginAuth Success: Logged into  " + this.firebaseurl + " as " + JSON.stringify(authData))
                 },
-                
+
                 close: function(){
                   _emit("closed")
 
@@ -263,7 +263,7 @@ module.exports = function (RED) {
         }.bind(this))
 
         this.fbConnection.on("authorized", function(authData){
-          this.log("authorized to " + this.firebaseurl + (authData ? " as " + JSON.stringify(authData) : "without auth"))
+          //this.log("authorized to " + this.firebaseurl + (authData ? " as " + JSON.stringify(authData) : "without auth"))
         }.bind(this))
 
         this.fbConnection.on("unauthorized", function(){

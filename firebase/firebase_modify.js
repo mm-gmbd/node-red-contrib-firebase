@@ -110,8 +110,8 @@ module.exports = function(RED) {
 
           //TODO: this seems to be mostly working, but we really ought to do some more due diligence here...
           //Try to convert to JSON object...
-          console.log(msg);
-          console.log("this.value -- "+this.value)
+          // console.log(msg);
+          // console.log("this.value -- "+this.value)
           if (this.value == "msg.payload"){
             if ("payload" in msg){
             //if (msg.hasOwnProperty("payload")) {
@@ -129,7 +129,9 @@ module.exports = function(RED) {
               }
               msg.payload = payload
             }
-          } else {
+          } else if(this.value == "Firebase.ServerValue.TIMESTAMP") {
+            msg.payload = this.config.fbConnection.Firebase.ServerValue.TIMESTAMP
+          } else{
             msg.payload = this.value;
           }
 

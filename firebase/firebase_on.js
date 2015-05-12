@@ -7,7 +7,8 @@ module.exports = function(RED) {
         this.config = RED.nodes.getNode(n.firebaseconfig);
         this.childpath = n.childpath;
         this.atStart = n.atStart;
-        this.eventType = n.eventType
+        this.eventType = n.eventType;
+		    this.queries = n.queries
 
         this.ready = false;
         this.ignoreFirst = this.atStart;
@@ -62,10 +63,50 @@ module.exports = function(RED) {
           this.ignoreFirst = this.atStart;  //Reset if we are re-registering listeners
 
           if(this.childpath){
-            this.config.fbConnection.fbRef.child(this.childpath).on(this.eventType, this.onFBValue, this.onFBError, this);
+            this.config.fbConnection.fbRef.child(this.childpath)
           }else{
             this.config.fbConnection.fbRef.on(this.eventType, this.onFBValue, this.onFBError, this);
           }
+
+          //Create the firebase reference to the path
+          var ref
+          if(msg.childpath){
+            ref = this.config.fbConnection.fbRef.child(msg.childpath)
+          }else{
+            ref = this.config.fbConnection.fbRef
+          }
+
+          //apply the queries
+          for (var i=0; i<this.queries.length; i+=1) {
+              var query = this.queries[i];
+              var val
+
+              switch(query.name){
+                case "orderByKey":
+                case "orderByValue":
+                case "orderByPriority":
+                  ref = ref[query.name]()  //No args //TODO: BUG: Update HTML to hide box for these 3...
+                  break;
+
+                case "orderByChild":
+                case "startAt":
+                case "endAt":
+                case "equalTo":
+                case "limitToFirst":
+                case "limitToLast":
+                  //try to convert to native type for bools, ints, etc.
+                  try{ val = JSON.parse(query.value.toLowerCase() || query.value) }
+                  catch(e){ val = query.value}
+
+                  ref = ref[query.name](val) //TODO: no error checking...
+                  break;
+
+                default:
+                  //TODO:
+                  break;
+              }
+          }
+          ref.on(this.eventType, this.onFBValue, this.onFBError, this);
         }.bind(this);
 
         this.destroyListeners = function(){

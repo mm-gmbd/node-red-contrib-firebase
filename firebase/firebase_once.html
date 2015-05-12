@@ -333,22 +333,26 @@
             function checkForIllegalComnbinationOfQueries(select, operator){
               //Look for illegal combinations of queries
               var illegalCombinations = [];
-              for (i in operatorOptions[operator].cannotBeCombinedWith){
-                $('#node-input-query-container select').not(select).each(function(idx){
-                  if ($(this).val() == operatorOptions[operator].cannotBeCombinedWith[i]){
-                    illegalCombinations.push($(this).val());
-                    //return; //breaks jquery .each loop
-                  }
-                });
-                //if (illegalCombination) break;
+              console.log(operator)
+              if(operatorOptions[operator] && operatorOptions[operator].cannotBeCombinedWith){
+                for (var i in operatorOptions[operator].cannotBeCombinedWith){
+                  $('#node-input-query-container select').not(select).each(function(idx){
+                    if ($(this).val() == operatorOptions[operator].cannotBeCombinedWith[i]){
+                      illegalCombinations.push($(this).val());
+                      //return; //breaks jquery .each loop
+                    }
+                  });
+                  //if (illegalCombination) break;
+                }
               }
+
               // if (illegalCombination) $('#node-input-query-illegal-combination-container').show();
               // else $('#node-input-query-illegal-combination-container').hide();
               return illegalCombinations;
             }
 
             function addIllegalCombination(operator, illegal){
-              console.log("Adding illegal combination for -- "+operator+" and illegal "+illegal);
+              //console.log("Adding illegal combination for -- "+operator+" and illegal "+illegal);
               if ($('#node-input-query-illegal-combination-container > p#'+operator+"[illegal=\""+illegal+"\"]").length == 0){
                 var $p = $('<p/>', {id: operator, style: 'margin: 0;', class: 'text-center', illegal: illegal}).append('Cannot combine "'+operator+'" with "'+illegal+'".');
                 $('#node-input-query-illegal-combination-container').append($p);
@@ -385,7 +389,7 @@
 
             function addInput($input){
               if ($input.not(':visible')){
-                console.log("input not visible");
+                //console.log("input not visible");
 
                 //Check if input already has text
                 if ($input.val() == null || $input.val().length == 0){
@@ -408,7 +412,7 @@
                 });
                 $input.fadeIn(300);
               } else {
-                console.log("input visible")
+                //console.log("input visible")
               }
             }
 
@@ -466,7 +470,7 @@
               var currentOperator = $select.val();
 
               //Check if input is allowed
-              if (operatorOptions[currentOperator].inputAllowed) addInput($input);
+              if (currentOperator && operatorOptions[currentOperator] && operatorOptions[currentOperator].inputAllowed) addInput($input);
               else removeInput($input);
 
               //Look for illegal combinations of queries
@@ -535,7 +539,7 @@
               $("#node-input-query-container").append($queryContainer);
 
               if (query){
-                console.log(query);
+                //console.log(query);
                 if ($select.val() != query.name){
                   $select.val(query.name);
                   $select.trigger('change');

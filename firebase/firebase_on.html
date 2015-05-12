@@ -54,10 +54,6 @@
         </div>
     </div>
 
-    <div id="query-parameters-info-container" class="form-tips hidden">
-      <p id="query-parameters-info" class="text-center" style="margin: 0;"><strong>One or more queries types are the same.</strong></p>
-    </div>
-
     <!-- By convention, most nodes have a 'name' property. The following div -->
     <!-- provides the necessary field. Should always be the last option      -->
     <div class="form-row">
@@ -157,7 +153,8 @@
             firebaseconfig:  {type:'firebase config',required:true},
             childpath: {value: '', required: false},
             atStart: {value: true, required: true},
-            eventType: {value: "value", required: true}
+            eventType: {value: "value", required: true},
+			queries: {value:[], required: true}
         },
         color: '#ffb37a',
         inputs:0,               // set the number of inputs - only 0 or 1
@@ -184,7 +181,6 @@
         labelStyle: function() { // sets the class to apply to the label
             return this.name?'node_label_italic':'';
         },
-
 
         oneditprepare: function() { //TODO: there is all kinds of validation that needs to be done to ensure only proper combinations of things are allowed...
           //Update the eventType node-red property when the value is changed...
@@ -361,7 +357,7 @@
             }
 
             function addIllegalCombination(operator, illegal){
-              console.log("Adding illegal combination for -- "+operator+" and illegal "+illegal);
+              //console.log("Adding illegal combination for -- "+operator+" and illegal "+illegal);
               if ($('#node-input-query-illegal-combination-container > p#'+operator+"[illegal=\""+illegal+"\"]").length == 0){
                 var $p = $('<p/>', {id: operator, style: 'margin: 0;', class: 'text-center', illegal: illegal}).append('Cannot combine "'+operator+'" with "'+illegal+'".');
                 $('#node-input-query-illegal-combination-container').append($p);
@@ -398,7 +394,7 @@
 
             function addInput($input){
               if ($input.not(':visible')){
-                console.log("input not visible");
+                //console.log("input not visible");
 
                 //Check if input already has text
                 if ($input.val() == null || $input.val().length == 0){
@@ -421,7 +417,7 @@
                 });
                 $input.fadeIn(300);
               } else {
-                console.log("input visible")
+                //console.log("input visible")
               }
             }
 
@@ -548,7 +544,7 @@
               $("#node-input-query-container").append($queryContainer);
 
               if (query){
-                console.log(query);
+                //console.log(query);
                 if ($select.val() != query.name){
                   $select.val(query.name);
                   $select.trigger('change');
@@ -634,6 +630,5 @@
             });
           }
         }
-
     });
 </script>

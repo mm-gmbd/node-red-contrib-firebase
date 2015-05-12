@@ -25,9 +25,9 @@ module.exports = function(RED) {
 
         // for (var i=0; i<this.queries.length; i+=1) {
         //     var query = this.queries[i];
-        //     if (!isNaN(Number(query.v))) {
-        //       query.v = Number(query.v);
-        //       query.v2 = Number(query.v2);
+        //     if (!isNaN(Number(query.value))) {
+        //       query.value = Number(query.value);
+        //       query.value2 = Number(query.value2);
         //     }
         // }
 
@@ -148,11 +148,11 @@ module.exports = function(RED) {
               var query = this.queries[i];
               var val
 
-              switch(query.t){
+              switch(query.name){
                 case "orderByKey":
                 case "orderByValue":
                 case "orderByPriority":
-                  ref = ref[query.t]()  //No args //TODO: BUG: Update HTML to hide box for these 3...
+                  ref = ref[query.name]()  //No args //TODO: BUG: Update HTML to hide box for these 3...
                   break;
 
                 case "orderByChild":
@@ -162,10 +162,10 @@ module.exports = function(RED) {
                 case "limitToFirst":
                 case "limitToLast":
                   //try to convert to native type for bools, ints, etc.
-                  try{ val = JSON.parse(query.v.toLowerCase() || query.v) }
-                  catch(e){ val = query.v}
+                  try{ val = JSON.parse(query.value.toLowerCase() || query.value) }
+                  catch(e){ val = query.value}
 
-                  ref = ref[query.t](val) //TODO: no error checking...
+                  ref = ref[query.name](val) //TODO: no error checking...
                   break;
 
                 default:
@@ -199,10 +199,10 @@ module.exports = function(RED) {
               var val
 
               //try to convert to native type for bools, ints, etc.
-              try{ val = JSON.parse(query.v.toLowerCase() || query.v) }
-              catch(e){ val = query.v}
+              try{ val = JSON.parse(query.value.toLowerCase() || query.value) }
+              catch(e){ val = query.value}
 
-              switch(query.t){
+              switch(query.name){
                 case "orderByChild":
                   url += '&orderBy="' + val + '"'
                   break;
@@ -222,9 +222,9 @@ module.exports = function(RED) {
                 case "limitToFirst":
                 case "limitToLast":
                   if (typeof val == 'string' || val instanceof String)
-                    url += '&' + query.t + '="' + val + '"'
+                    url += '&' + query.name + '="' + val + '"'
                   else
-                    url += '&' + query.t + '='+ val
+                    url += '&' + query.name + '='+ val
                   break;
 
                 default:

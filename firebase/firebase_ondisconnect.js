@@ -12,6 +12,7 @@ module.exports = function(RED) {
         this.config = RED.nodes.getNode(n.firebaseconfig);
         this.childpath = n.childpath;
         this.method = n.method;
+        this.value = n.value;
         this.fbRequests = [];
 
         this.ready = false;
@@ -43,43 +44,51 @@ module.exports = function(RED) {
 
 
         //this.config.fbConnection EventEmitter Handlers
-        this.fbConnecting = function(){  //This isn't being called because its emitted too early...
-          this.status({fill:"grey", shape:"ring", text:"connecting..."})
+        this.fbInitailizing = function(){  //This isn't being called because its emitted too early...
+          // this.log("initailizing")
+          this.status({fill:"grey", shape:"ring", text:"initailizing..."})
           this.ready = false;
         }.bind(this)
 
         this.fbConnected = function(){
+          // this.log("connected")
           this.status({fill:"green", shape:"ring", text:"connected"})
-          this.ready = false;
+          // this.ready = false;
         }.bind(this)
 
         this.fbDisconnected = function(){
+          // this.log("disconnected")
           this.status({fill:"red", shape:"ring", text:"disconnected"})
           this.ready = false;
         }.bind(this)
 
         this.fbAuthorized = function(authData){
+          // this.log("authorized")
           this.status({fill:"green", shape:"dot", text:"ready"})
           this.ready = true;
         }.bind(this)
 
         this.fbUnauthorized = function(){
+          // this.log("unauthorized")
           this.status({fill:"red", shape:"dot", text:"unauthorized"})
           this.ready = false;
         }.bind(this)
 
         this.fbError = function(error){
+          // this.log("error")
           this.status({fill:"red", shape:"ring", text:error})
+          this.error(error, {})
         }.bind(this)
 
         this.fbClosed = function(error){
+          // this.log("closed")
           this.status({fill: "gray", shape: "dot", text:"connection closed"})
           this.ready = false;
         }.bind(this)
 
 
         //Register Handlers
-        this.config.fbConnection.on("connecting", this.fbConnecting)
+        this.config.fbConnection.on("initailizing", this.fbInitailizing)
         this.config.fbConnection.on("connected", this.fbConnected)
         this.config.fbConnection.on("disconnected", this.fbDisconnected)
         this.config.fbConnection.on("authorized", this.fbAuthorized)
@@ -87,9 +96,12 @@ module.exports = function(RED) {
         this.config.fbConnection.on("error", this.fbError)
         this.config.fbConnection.on("closed", this.fbClosed)
 
+
+        this.log("setting initial state to [fb" + this.config.fbConnection.lastEvent.capitalize()+ "]("+this.config.fbConnection.lastEventData+")" )
+
         //set initial state (depending on the deployment strategy, for newly deployed nodes, some of the events may not be refired...)
         switch(this.config.fbConnection.lastEvent) {
-          case "connecting":
+          case "initailizing":
           case "connected":
           case "disconnected":
           case "authorized":
@@ -111,13 +123,14 @@ module.exports = function(RED) {
 
             //TODO: this seems to be mostly working, but we really ought to do some more due diligence here...
             //Try to convert to JSON object...
+            var payload
             if (this.value == "msg.payload"){
               if ("payload" in msg){
               //if (msg.hasOwnProperty("payload")) {
-                var payload = msg.payload;
+                payload = msg.payload;
                 if (!Buffer.isBuffer(payload)) {
                     if (typeof payload === "object") {
-                        //this is what we want
+
                     } else {
                         try{
                           payload = JSON.parse(payload)
@@ -127,6 +140,8 @@ module.exports = function(RED) {
                     }
                 }
                 msg.payload = payload
+              } else {
+                msg.payload = null;
               }
             } else if(this.value == "Firebase.ServerValue.TIMESTAMP") {
               msg.payload = this.config.fbConnection.Firebase.ServerValue.TIMESTAMP
@@ -151,6 +166,8 @@ module.exports = function(RED) {
               }
             }
             childpath = childpath || "/"
+
+            console.log(msg.payload)
 
             switch (method) {
                 case "set":

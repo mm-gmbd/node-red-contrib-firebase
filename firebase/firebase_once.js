@@ -276,7 +276,7 @@ module.exports = function(RED) {
         this.setStatus = function(){
           //set = state (depending on the deployment strategy, for newly deployed nodes, some of the events may not be refired...)
           switch(this.config.fbConnection.lastEvent) {
-            case "connecting":
+            case "initailizing":
             case "connected":
             case "disconnected":
             case "authorized":
@@ -295,9 +295,9 @@ module.exports = function(RED) {
         }.bind(this)
 
         //this.config.fbConnection EventEmitter Handlers
-        this.fbConnecting = function(){  //This isn't being called because its emitted too early...
-          // this.log("connecting...")
-          this.status({fill:"grey", shape:"ring", text:"connecting..."})
+        this.fbInitailizing = function(){  //This isn't being called because its emitted too early...
+          // this.log("initailizing...")
+          this.status({fill:"grey", shape:"ring", text:"initailizing..."})
           this.ready = false;
         }.bind(this)
 
@@ -341,7 +341,7 @@ module.exports = function(RED) {
         }.bind(this)
 
         //Register Handlers
-        this.config.fbConnection.on("connecting", this.fbConnecting)
+        this.config.fbConnection.on("initailizing", this.fbInitailizing)
         this.config.fbConnection.on("connected", this.fbConnected)
         this.config.fbConnection.on("disconnected", this.fbDisconnected)
         this.config.fbConnection.on("authorized", this.fbAuthorized)

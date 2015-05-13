@@ -70,8 +70,8 @@ module.exports = function(RED) {
 
           //Create the firebase reference to the path
           var ref
-          if(msg.childpath){
-            ref = this.config.fbConnection.fbRef.child(msg.childpath)
+          if(this.childpath){
+            ref = this.config.fbConnection.fbRef.child(this.childpath)
           }else{
             ref = this.config.fbConnection.fbRef
           }
@@ -122,8 +122,8 @@ module.exports = function(RED) {
         this.setStatus = function(error){
           //set = state (depending on the deployment strategy, for newly deployed nodes, some of the events may not be refired...)
           switch(this.config.fbConnection.lastEvent) {
-            case "connecting":
-              this.status({fill:"grey", shape:"ring", text:"connecting..."})
+            case "initailizing":
+              this.status({fill:"grey", shape:"ring", text:"initailizing..."})
               break;
             case "connected":
               this.status({fill:"green", shape:"ring", text:"connected"})
@@ -153,47 +153,56 @@ module.exports = function(RED) {
         }.bind(this)
 
         //this.config.fbConnection EventEmitter Handlers
-        this.fbConnecting = function(){  //This isn't being called because its emitted too early...
+        this.fbInitailizing = function(){  //This isn't being called because its emitted too early...
+          // this.log("initailizing")
           this.setStatus();
         }.bind(this)
 
         this.fbConnected = function(){
+          // this.log("connected")
           this.setStatus();
         }.bind(this)
 
         this.fbDisconnected = function(){
+          // this.log("disconnected")
           this.setStatus();
         }.bind(this)
 
         this.fbAuthorized = function(authData){
+          // this.log("authorized")
           this.setStatus();
           this.registerListeners();
         }.bind(this)
 
         this.fbUnauthorized = function(){
+          // this.log("unauthorized")
           this.setStatus();
           this.destroyListeners();
         }.bind(this)
 
         this.fbError = function(error){
+          // this.log("error - " + error)
           this.setStatus(error);
           this.error(error, {})
         }.bind(this)
 
-        this.fbClosed = function(error){
+        this.fbClosed = function(){
+          // this.log("closed")
           this.setStatus();
           this.destroyListeners();  //TODO: this is being called in too many places but better safe than sorry?  Really need to figure out execution flow of Node-Red and decide if we can only have it here instead of also in this.on("close")
         }.bind(this)
 
 
         //Register Handlers
-        this.config.fbConnection.on("connecting", this.fbConnecting)
+        this.config.fbConnection.on("initailizing", this.fbInitailizing)
         this.config.fbConnection.on("connected", this.fbConnected)
         this.config.fbConnection.on("disconnected", this.fbDisconnected)
         this.config.fbConnection.on("authorized", this.fbAuthorized)
         this.config.fbConnection.on("unauthorized", this.fbUnauthorized)
         this.config.fbConnection.on("error", this.fbError)
         this.config.fbConnection.on("closed", this.fbClosed)
+
+        // this.log("setting initial state to [fb" + this.config.fbConnection.lastEvent.capitalize()+ "]("+this.config.fbConnection.lastEventData+")" )
 
         //set initial state (depending on the deployment strategy, for newly deployed nodes, some of the events may not be refired...)
         this["fb" + this.config.fbConnection.lastEvent.capitalize()](this.config.fbConnection.lastEventData)  //Javascript is really friendly about sending arguments to functions...

@@ -9,7 +9,7 @@ module.exports = function (RED) {
     var path = require("path");
     var https = require("follow-redirects").https;
     var urllib = require("url");
-    var async = require("async")
+    // var async = require("async")
 
     function generateUID(){
       return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { //Generates a random RequestID
@@ -41,7 +41,7 @@ module.exports = function (RED) {
 
     //connectionPool is responsible for managing Firebase Connections, Authentication, etc.
     //connectionPool emits the following events:
-      //connecting
+      //initailizing
       //connected
       //disconnected
       //authorized
@@ -68,6 +68,7 @@ module.exports = function (RED) {
 
                 this.lastEvent = a;
                 this.lastEventData = b;
+
                 _emitter.emit(a,b)
               }
 
@@ -82,7 +83,7 @@ module.exports = function (RED) {
                 secret: null,
                 passORuid: null,  //TODO: Probably should clean this up similair to the config node to make it less confusing what is going on...
                 nodeCount: 0,
-                lastEvent: null,
+                lastEvent: "initailizing",
                 lastEventData: null,
                 httpRequests: {},
 
@@ -105,7 +106,9 @@ module.exports = function (RED) {
 
                   switch (loginType) {
                       case 'none':
-                          _emit("authorized");
+                          process.nextTick(function(){
+                            _emit("authorized")
+                          }.bind(this));
                           break;
                       case 'jwt':
                           this.fbRef.authWithCustomToken(secret, this.onLoginAuth.bind(this))
@@ -215,10 +218,10 @@ module.exports = function (RED) {
               //Set "this" in our private functions
               _emit = _emit.bind(obj);
               _emitter.setMaxListeners(0);  //Suppress Memory Leak warnings, 0 means unlimited listeners
-              _emitter.emit("connecting");
-              obj.fbRef.child(".info/connected").on("value", obj.onConnectionStatusChange, obj);
-
-
+              process.nextTick(function(){
+                _emitter.emit("initailizing");  //_emit would suppress this because of the default value...
+                obj.fbRef.child(".info/connected").on("value", obj.onConnectionStatusChange, obj);
+              }.bind(obj))
 
               return obj;
             }();
@@ -260,63 +263,62 @@ module.exports = function (RED) {
 
         this.fbConnection = connectionPool.get(this.firebaseurl)
 
-        this.fbConnection.on("connecting", function(){  //TODO: BUG: This isn't being called because its emitted too early...  Not sure if there is a way to change that...
-          //this.log("connecting to " + this.firebaseurl)
-          this.status({fill:"grey", shape:"ring", text:"connecting..."})
+        this.fbConnection.on("initailizing", function(){
+          // this.log("initailizing to " + this.firebaseurl)
+          this.status({fill:"grey", shape:"ring", text:"initailizing..."})
         }.bind(this))
 
         this.fbConnection.on("connected", function(){
-          //this.log("connected to " + this.firebaseurl)
+          // this.log("connected to " + this.firebaseurl)
+          switch (this.loginType) {
+              case 'none':
+              case 'anonymous':
+                this.fbConnection.authorize(this.loginType);
+                break;
+              case 'jwt':  //TODO:
+                this.fbConnection.authorize(this.loginType, this.secret);
+                break;
+              case 'email':
+                this.fbConnection.authorize(this.loginType, this.email, this.password);
+                break;
+              case 'customGenerated':
+              this.fbConnection.authorize(this.loginType, this.secret, this.uid);
+                break;
+              case 'facebook': //TODO:
+                break;
+              case 'twitter': //TODO:
+                break;
+              case 'github': //TODO:
+                break;
+              case 'google': //TODO:
+                break;
+              default:
+                this.error("Invalid loginType in firebase " + this.firebaseurl + " config - " + this.loginType, {})
+                this.status({fill:"red", shape:"ring", text:"invalid loginType"})
+                break;
+          }
           this.status({fill:"green", shape:"ring", text:"connected"})
         }.bind(this))
 
         this.fbConnection.on("disconnected", function(){
-          //this.log("disconnected from " + this.firebaseurl)
+          // this.log("disconnected from " + this.firebaseurl)
           this.status({fill:"red", shape:"ring", text:"disconnected"})
         }.bind(this))
 
         this.fbConnection.on("authorized", function(authData){
-          //this.log("authorized to " + this.firebaseurl + (authData ? " as " + JSON.stringify(authData) : "without auth"))
+          // this.log("authorized to " + this.firebaseurl + (authData ? " as " + JSON.stringify(authData) : " without auth"))
         }.bind(this))
 
         this.fbConnection.on("unauthorized", function(){
-          //this.log("unauthorized from " + this.firebaseurl)
+          // this.log("unauthorized from " + this.firebaseurl)
           this.status({fill:"red", shape:"dot", text:"unauthorized"})
         }.bind(this))
 
         this.fbConnection.on("error", function(error){
-          //this.log("error [" + this.firebaseurl + "]" + error)
+          // this.log("error [" + this.firebaseurl + "] - " + error)
           this.status({fill:"red", shape:"ring", text:error})
           this.error(JSON.stringify(error), error);//TODO: BUG: Config nodes have no where to pass there second error param...
         }.bind(this))
-
-        switch (this.loginType) {
-            case 'none':
-            case 'anonymous':
-              this.fbConnection.authorize(this.loginType);
-              break;
-            case 'jwt':  //TODO:
-              this.fbConnection.authorize(this.loginType, this.secret);
-              break;
-            case 'email':
-              this.fbConnection.authorize(this.loginType, this.email, this.password);
-              break;
-            case 'customGenerated':
-            this.fbConnection.authorize(this.loginType, this.secret, this.uid);
-              break;
-            case 'facebook': //TODO:
-              break;
-            case 'twitter': //TODO:
-              break;
-            case 'github': //TODO:
-              break;
-            case 'google': //TODO:
-              break;
-            default:
-              this.error("Invalid loginType in firebase " + this.firebaseurl + " config - " + this.loginType, {})
-              this.status({fill:"red", shape:"ring", text:"invalid loginType"})
-              break;
-        }
 
         // this.on('input', function(msg) { //Meaningless in a Config Node
         //     // do something with 'msg'
@@ -329,8 +331,6 @@ module.exports = function (RED) {
             // We need to unbind our callback, or we'll get duplicate messages when we redeploy
             connectionPool.close(this.firebaseurl)
         });
-
-
     }
 
     RED.nodes.registerType('firebase config', FirebaseConfig, {

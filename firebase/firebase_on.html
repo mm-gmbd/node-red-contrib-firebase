@@ -165,7 +165,7 @@
         paletteLabel: "firebase.on()",
 
         label: function() {     // sets the default label contents
-            //var config = RED.nodes.getNode(this.firebaseconfig);  //TODO: BUG: Doesn't appear to be a way to do this on the client side...
+            var config = RED.nodes.node(this.firebaseconfig); //server side uses RED.nodes.getNode... go figure...
 
             // make sure the path starts with /
             var childpath = (this.childpath.indexOf("/") == 0) ? this.childpath : "/" + this.childpath;
@@ -174,8 +174,7 @@
 
             //TODO: should we try to use the config nodes path and append to childpath or is that too long?
             return this.name ||
-                   //"https://"+config.firebaseurl+"firebaseio.com/"+(this.childpath||"") + ".on(\""+this.eventType+"\")" ||
-                   childpath + ".on(\""+this.eventType+"\")" ||
+                   (config ? "https://"+config.firebaseurl+".firebaseio.com"+(childpath||"") + ".on(\""+this.eventType+"\")" : childpath + ".on(\""+this.eventType+"\")" ) ||
                    "firebase.on(\""+this.eventType+"\")";
         },
         labelStyle: function() { // sets the class to apply to the label
@@ -272,21 +271,6 @@
           }
 
           var operators = [
-                // {v:"eq",t:"=="},
-                // {v:"neq",t:"!="},
-                // {v:"lt",t:"<"},
-                // {v:"lte",t:"<="},
-                // {v:"gt",t:">"},
-                // {v:"gte",t:">="},
-                // {v:"btwn",t:"is between"},
-                // {v:"cont",t:"contains"},
-                // {v:"regex",t:"matches regex"},
-                // {v:"true",t:"is true"},
-                // {v:"false",t:"is false"},
-                // {v:"null",t:"is null"},
-                // {v:"nnull",t:"is not null"},
-                // {v:"else",t:"otherwise"},
-
                 "orderByChild",
                 "orderByKey",
                 "orderByValue",
@@ -296,18 +280,6 @@
                 "equalTo",
                 "limitToFirst",
                 "limitToLast",
-
-                // {v:"orderByChild", t:"orderByChild"},
-                // {v:"orderByKey", t:"orderByKey"},
-                // {v:"orderByValue", t:"orderByValue"},
-                // {v:"orderByPriority", t:"orderByPriority"},
-                // {v:"startAt", t:"startAt"},
-                // {v:"endAt", t:"endAt"},
-                // {v:"equalTo", t:"equalTo"},
-                // {v:"limitToFirst", t:"limitToFirst"},
-                // {v:"limitToLast", t:"limitToLast"},
-                //{v:"limit", t:"limit"}  //deprecated
-
             ];
 
             var illegalCombinationShown = false;
@@ -624,8 +596,7 @@
             var queries = $("#node-input-query-container").children();
             queries.each(function(idx){
               var r = {name: $(this).find('select').val()}
-              //if (operatorOptions[r.name].inputAllowed) r.value = $(this).find('input').val();
-              r.value = ($(this).find('input').is(':visible') ? $(this).find('input').val() : null);
+              r.value = $(this).find('input').is(':visible') ? $(this).find('input').val() : "";
               node.queries.push(r);
             });
           }

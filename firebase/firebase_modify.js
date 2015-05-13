@@ -42,8 +42,8 @@ module.exports = function(RED) {
 
 
       //this.config.fbConnection EventEmitter Handlers
-      this.fbConnecting = function(){  //This isn't being called because its emitted too early...
-        this.status({fill:"grey", shape:"ring", text:"connecting..."})
+      this.fbInitailizing = function(){  //This isn't being called because its emitted too early...
+        this.status({fill:"grey", shape:"ring", text:"initailizing..."})
         this.ready = false;
       }.bind(this)
 
@@ -78,7 +78,7 @@ module.exports = function(RED) {
 
 
       //Register Handlers
-      this.config.fbConnection.on("connecting", this.fbConnecting)
+      this.config.fbConnection.on("initailizing", this.fbInitailizing)
       this.config.fbConnection.on("connected", this.fbConnected)
       this.config.fbConnection.on("disconnected", this.fbDisconnected)
       this.config.fbConnection.on("authorized", this.fbAuthorized)
@@ -88,7 +88,7 @@ module.exports = function(RED) {
 
       //set initial state (depending on the deployment strategy, for newly deployed nodes, some of the events may not be refired...)
       switch(this.config.fbConnection.lastEvent) {
-        case "connecting":
+        case "initailizing":
         case "connected":
         case "disconnected":
         case "authorized":
@@ -112,10 +112,11 @@ module.exports = function(RED) {
           //Try to convert to JSON object...
           // console.log(msg);
           // console.log("this.value -- "+this.value)
+          var payload
           if (this.value == "msg.payload"){
             if ("payload" in msg){
             //if (msg.hasOwnProperty("payload")) {
-              var payload = msg.payload;
+              payload = msg.payload;
               if (!Buffer.isBuffer(payload)) {
                   if (typeof payload === "object") {
                       //this is what we want

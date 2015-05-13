@@ -94,20 +94,21 @@
         outputs: 0,                 // set the number of outputs - 0 to n
 
         label: function () {        // sets the default label contents
-            var method = "." + this.method
-            if(method == ".msg.method")
-              method = "[msg.method]"
+          var method = "." + this.method +"()"
+          if(method == ".msg.method()")
+            method = "[msg.method]()"
 
+           var config = RED.nodes.node(this.firebaseconfig); //server side uses RED.nodes.getNode... go figure...
 
-            // make sure the path starts with /
-            var childpath = (this.childpath.indexOf("/") == 0) ? this.childpath : "/" + this.childpath;
-            //make sure the path does not end with /
-            childpath = childpath.substr(-1) == "/" ? childpath.slice(0,-1) : childpath
+           // make sure the path starts with /
+           var childpath = (this.childpath.indexOf("/") == 0) ? this.childpath : "/" + this.childpath;
+           //make sure the path does not end with /
+           childpath = childpath.substr(-1) == "/" ? childpath.slice(0,-1) : childpath
 
-            return this.name ||
-                   //"https://"+config.firebaseurl+"firebaseio.com/"+(this.childpath||"") + ".on(\""+this.eventType+"\")" ||
-                   childpath + method + "()" ||
-                   "firebase" + method + "()";
+           //TODO: should we try to use the config nodes path and append to childpath or is that too long?
+           return this.name ||
+                 (config ? "https://"+config.firebaseurl+".firebaseio.com"+(childpath||"") + method : childpath + method) ||
+                 "firebase" + method;
         },
 
         labelStyle: function () {   // sets the class to apply to the label

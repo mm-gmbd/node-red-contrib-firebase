@@ -156,18 +156,17 @@
         paletteLabel: "firebase.once()",
 
         label: function() {     // sets the default label contents
-            //var config = RED.nodes.getNode(this.firebaseconfig);  //TODO: BUG: Doesn't appear to be a way to do this on the client side...
+           var config = RED.nodes.node(this.firebaseconfig); //server side uses RED.nodes.getNode... go figure...
 
-            // make sure the path starts with /
-            var childpath = (this.childpath.indexOf("/") == 0) ? this.childpath : "/" + this.childpath;
-            //make sure the path does not end with /
-            childpath = childpath.substr(-1) == "/" ? childpath.slice(0,-1) : childpath
+           // make sure the path starts with /
+           var childpath = (this.childpath.indexOf("/") == 0) ? this.childpath : "/" + this.childpath;
+           //make sure the path does not end with /
+           childpath = childpath.substr(-1) == "/" ? childpath.slice(0,-1) : childpath
 
-            //TODO: should we try to use the config nodes path and append to childpath or is that too long?
-            return this.name ||
-                   //"https://"+config.firebaseurl+"firebaseio.com/"+(this.childpath||"") + ".on(\""+this.eventType+"\")" ||
-                   childpath + ".once(\""+this.eventType+"\")" ||
-                   "firebase.once(\""+this.eventType+"\")";
+           //TODO: should we try to use the config nodes path and append to childpath or is that too long?
+           return this.name ||
+                  (config ? "https://"+config.firebaseurl+".firebaseio.com"+(childpath||"") + ".once(\""+this.eventType+"\")" : childpath + ".once(\""+this.eventType+"\")") ||
+                  "firebase.once(\""+this.eventType+"\")";
         },
         labelStyle: function() { // sets the class to apply to the label
             return this.name?'node_label_italic':'';
@@ -620,7 +619,7 @@
             queries.each(function(idx){
               var r = {name: $(this).find('select').val()}
               //if (operatorOptions[r.name].inputAllowed) r.value = $(this).find('input').val();
-              r.value = ($(this).find('input').is(':visible') ? $(this).find('input').val() : null);
+              r.value = ($(this).find('input').is(':visible') ? $(this).find('input').val() : "");
               node.queries.push(r);
             });
           }

@@ -6,6 +6,17 @@ module.exports = function (RED) {
     var Firebase = require('firebase');
     var FirebaseTokenGenerator = require("firebase-token-generator");
     var events = require("events");
+    var path = require("path");
+    var https = require("follow-redirects").https;
+    var urllib = require("url");
+    var async = require("async")
+
+    function generateUID(){
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { //Generates a random RequestID
+          var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+          return v.toString(16);
+      });
+    }
 
     // Firebase Full Authentication Error Listing - https://www.firebase.com/docs/web/guide/user-auth.html#section-full-error
     // AUTHENTICATION_DISABLED	The requested authentication provider is disabled for this Firebase.
@@ -73,6 +84,7 @@ module.exports = function (RED) {
                 nodeCount: 0,
                 lastEvent: null,
                 lastEventData: null,
+                httpRequests: {},
 
                 on: function(a,b) { _emitter.on(a,b); },
                 once: function(a,b) { _emitter.once(a,b); },
@@ -185,6 +197,7 @@ module.exports = function (RED) {
 
                 close: function(){
                   _emit("closed")
+                  _emitter.removeAllListeners();  //Makes sure everybody stopped listening to us... //TODO: This may prevent nodes from receiving the "closed" event...
 
                   //Clean up the Firebase Reference and tear down the connection
 
@@ -201,7 +214,7 @@ module.exports = function (RED) {
 
               //Set "this" in our private functions
               _emit = _emit.bind(obj);
-
+              _emitter.setMaxListeners(0);  //Suppress Memory Leak warnings, 0 means unlimited listeners
               _emitter.emit("connecting");
               obj.fbRef.child(".info/connected").on("value", obj.onConnectionStatusChange, obj);
 
@@ -274,7 +287,7 @@ module.exports = function (RED) {
         this.fbConnection.on("error", function(error){
           //this.log("error [" + this.firebaseurl + "]" + error)
           this.status({fill:"red", shape:"ring", text:error})
-          this.error(error);
+          this.error(JSON.stringify(error), error);//TODO: BUG: Config nodes have no where to pass there second error param...
         }.bind(this))
 
         switch (this.loginType) {

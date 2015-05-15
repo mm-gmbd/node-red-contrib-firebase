@@ -107,7 +107,7 @@ module.exports = function (RED) {
                   switch (loginType) {
                       case 'none':
                           process.nextTick(function(){
-                            _emit("authorized")
+                            _emit("authorized", null)
                           }.bind(this));
                           break;
                       case 'jwt':

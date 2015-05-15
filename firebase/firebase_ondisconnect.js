@@ -14,6 +14,7 @@ module.exports = function(RED) {
         this.childpath = n.childpath;
         this.method = n.method;
         this.value = n.value;
+        this.priority = n.priority;
         this.fbRequests = [];
 
         this.ready = false;
@@ -22,8 +23,8 @@ module.exports = function(RED) {
           "set": true,
           "update": true,
           "remove": true//,
-          //"setWithPriority": true,
-          //"cancel": true
+          "setWithPriority": true,
+          "cancel": true
         }
 
         // Check credentials
@@ -38,7 +39,7 @@ module.exports = function(RED) {
             var msg = this.fbRequests.shift() //Firebase will call these in order for us
             //TODO: Once Node-Red supports it, we should flash the Node when we receive this data.
             if(error){
-              this.log("firebase synchronization failed")
+              //this.log("firebase synchronization failed")
               this.error("firebase synchronization failed - " + error, msg)
             }
         }.bind(this);
@@ -67,6 +68,10 @@ module.exports = function(RED) {
           // this.log("authorized")
           this.status({fill:"green", shape:"dot", text:"ready"})
           this.ready = true;
+          if (this.value != "msg.payload" && this.method != "msg.method" && this.childpath != "msg.childpath"){
+            //this.warn("FB Authorized -- explicitly emitting event INPUT");
+            this.emit('input', {});
+          }
         }.bind(this)
 
         this.fbUnauthorized = function(){
@@ -86,7 +91,6 @@ module.exports = function(RED) {
           this.status({fill: "gray", shape: "dot", text:"connection closed"})
           this.ready = false;
         }.bind(this)
-
 
         //Register Handlers
         this.config.fbConnection.on("initailizing", this.fbInitailizing)
@@ -118,68 +122,91 @@ module.exports = function(RED) {
         this.on('input', function(msg) {
           if(this.ready){
 
-            //TODO: this seems to be mostly working, but we really ought to do some more due diligence here...
-            //Try to convert to JSON object...
-            var payload
-            if (this.value == "msg.payload"){
-              if ("payload" in msg){
-              //if (msg.hasOwnProperty("payload")) {
-                payload = msg.payload;
-                if (!Buffer.isBuffer(payload)) {
-                    if (typeof payload === "object") {
-
-                    } else {
-                        try{
-                          payload = JSON.parse(payload)
-                        } catch(e){
-                          payload = msg.payload.toString();
-                        }
-                    }
-                }
-                msg.payload = payload
-              } else {
-                msg.payload = null;
-              }
-            } else if(this.value == "Firebase.ServerValue.TIMESTAMP") {
-              msg.payload = this.config.fbConnection.Firebase.ServerValue.TIMESTAMP
-            } else{
-              msg.payload = this.value;
-            }
-
+            //Parse out msg.method
             var method = this.method
             if(method == "msg.method"){
               if("method" in msg){
                 method = msg.method
               } else {
-                this.error("Expected \"method\" property in msg object", msg)
+                this.error("Expected \"method\" property not in msg object, .onDisconnect() will not be set", msg)
                 return;
               }
             }
 
+            //Parse out msg.payload
+            var value = this.value;
+            if (method != "setPriority" && method != "cancel"){
+              if (value == "msg.payload"){
+                if ("payload" in msg){
+                  value = msg.payload;
+                  if (!Buffer.isBuffer(value) && typeof value != "object"){
+                    try {
+                      value = JSON.parse(value)
+                    } catch(e){
+                      value = msg.payload.toString();
+                    }
+                  }
+                } else {
+                  this.warn("Expected \"payload\" property not in msg object (setting payload to \"null\")", msg);
+                  value = null;
+                }
+              } else if(this.value == "Firebase.ServerValue.TIMESTAMP") {
+                value = this.config.fbConnection.Firebase.ServerValue.TIMESTAMP
+              }
+              msg.payload = value;
+            }
+
+            //Parse out msg.priority
+            var priority = null;
+            if (method == "setPriority" || method == "setWithPriority"){
+              priority = this.priority;
+              if (priority == null){
+                this.error("Expected \"priority\" property not included, .onDisconnect() will not be set", msg)
+                return;
+              } else if (priority == "msg.priority"){
+                if ("priority" in msg) priority = msg.priority;
+                else {
+                  this.error("Expected \"priority\" property in msg object, .onDisconnect() will not be set", msg)
+                  return;
+                }
+              }
+            }
+
+            //Parse out msg.childpath
             var childpath = this.childpath
-            if(!childpath || childpath == ""){
+            if(childpath == "msg.childpath"){
               if("childpath" in msg){
                 childpath = msg.childpath
               }
             }
             childpath = childpath || "/"
 
-            console.log(msg.payload)
-
             switch (method) {
-                case "set":
-                case "update":
-                case "push":
-                  this.fbRequests.push(msg)
-                  this.config.fbConnection.fbRef.child(childpath).onDisconnect()[method](msg.payload, this.fbOnComplete.bind(this)); //TODO: Why doesn't the Firebase API support passing a context to these calls?
-                  break;javas
-                case "remove":
-                  this.fbRequests.push(msg)
-                  this.config.fbConnection.fbRef.child(childpath).onDisconnect()[method](this.fbOnComplete.bind(this));
-                  break;
-                default:
-                  this.error("Invalid msg.method property \"" + method + "\".  Expected one of the following: [\"" + Object.keys(this.validMethods).join("\", \"") + "\"].", msg)
-                  break;
+              case "set":
+              case "update":
+              case "push":
+                this.fbRequests.push(msg)
+                this.config.fbConnection.fbRef.child(childpath).onDisconnect()[method](msg.payload, this.fbOnComplete.bind(this)); //TODO: Why doesn't the Firebase API support passing a context to these calls?
+                break;javas
+              case "remove":
+                this.fbRequests.push(msg)
+                this.config.fbConnection.fbRef.child(childpath).onDisconnect()[method](this.fbOnComplete.bind(this));
+                break;
+              // case "setPriority":
+              //   this.fbRequests.push(msg)
+              //   this.config.fbConnection.fbRef.child(childpath).onDisconnect()[method](priority, this.fbOnComplete.bind(this));
+              //   break;
+              case "cancel":
+                this.fbRequests.push(msg)
+                this.config.fbConnection.fbRef.child(childpath).onDisconnect()[method](this.fbOnComplete.bind(this));
+                break;
+              case "setWithPriority":
+                this.fbRequests.push(msg)
+                this.config.fbConnection.fbRef.child(childpath).onDisconnect()[method](msg.payload, priority, this.fbOnComplete.bind(this));
+                break;
+              default:
+                this.error("Invalid msg.method property \"" + method + "\".  Expected one of the following: [\"" + Object.keys(this.validMethods).join("\", \"") + "\"].", msg)
+                break;
             }
           } else {
             this.warn("Received msg before firebase modify node was ready.  Not processing: " + JSON.stringify(msg, null, "\t"))
@@ -202,6 +229,7 @@ module.exports = function(RED) {
                   if(error){
                     res.send(502, error)
                   } else{
+					          node.warn("Cancelling all firebase.onDisconnect() values");
                     res.send(200)
                   }
                 }) //Cancel all previously queued onDisconnect() set or update events for this location and all children

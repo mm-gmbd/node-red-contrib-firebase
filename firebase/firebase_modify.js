@@ -12,6 +12,7 @@ module.exports = function(RED) {
       this.childpath = n.childpath;
       this.value = n.value;
       this.method = n.method;
+      this.priority = n.priority;
       this.fbRequests = [];
 
       this.ready = false;
@@ -20,7 +21,9 @@ module.exports = function(RED) {
         "set": true,
         "update": true,
         "push": true,
-        "remove": true
+        "remove": true,
+    		"setPriority": true,
+    		"setWithPriority": true
       }
 
       // Check credentials
@@ -110,32 +113,7 @@ module.exports = function(RED) {
 
           //TODO: this seems to be mostly working, but we really ought to do some more due diligence here...
           //Try to convert to JSON object...
-          // console.log(msg);
-          // console.log("this.value -- "+this.value)
-          var payload
-          if (this.value == "msg.payload"){
-            if ("payload" in msg){
-            //if (msg.hasOwnProperty("payload")) {
-              payload = msg.payload;
-              if (!Buffer.isBuffer(payload)) {
-                  if (typeof payload === "object") {
-                      //this is what we want
-                  } else {
-                      try{
-                        payload = JSON.parse(payload)
-                      } catch(e){
-                        payload = msg.payload.toString();
-                      }
-                  }
-              }
-              msg.payload = payload
-            }
-          } else if(this.value == "Firebase.ServerValue.TIMESTAMP") {
-            msg.payload = this.config.fbConnection.Firebase.ServerValue.TIMESTAMP
-          } else{
-            msg.payload = this.value;
-          }
-
+          //Parse out msg.method
           var method = this.method
           if(method == "msg.method"){
             if("method" in msg){
@@ -146,8 +124,48 @@ module.exports = function(RED) {
             }
           }
 
+          //Parse out msg.payload
+          var value = this.value;
+          if (method != "setPriority"){
+            if (value == "msg.payload"){
+              if ("payload" in msg){
+                value = msg.payload;
+                if (!Buffer.isBuffer(value) && typeof value != "object"){
+                  try {
+                    value = JSON.parse(value)
+                  } catch(e){
+                    value = msg.payload.toString();
+                  }
+                }
+              } else {
+                this.warn("Expected \"payload\" property not in msg object (setting payload to \"null\")", msg);
+                value = null;
+              }
+            } else if(this.value == "Firebase.ServerValue.TIMESTAMP") {
+              value = this.config.fbConnection.Firebase.ServerValue.TIMESTAMP
+            }
+            msg.payload = value;
+          }
+
+          //Parse out msg.priority
+          var priority = null;
+          if (method == "setPriority" || method == "setWithPriority"){
+            priority = this.priority;
+            if (priority == null){
+              this.error("Expected \"priority\" property not included", msg)
+              return;
+            } else if (priority == "msg.priority"){
+              if ("priority" in msg) priority = msg.priority;
+              else {
+                this.error("Expected \"priority\" property in msg object", msg)
+                return;
+              }
+            }
+          }
+
+          //Parse out msg.childpath
           var childpath = this.childpath
-          if(!childpath || childpath == ""){
+          if(childpath == "msg.childpath"){
             if("childpath" in msg){
               childpath = msg.childpath
             }
@@ -155,19 +173,27 @@ module.exports = function(RED) {
           childpath = childpath || "/"
 
           switch (method){
-              case "set":
-              case "update":
-              case "push":
-                this.fbRequests.push(msg)
-                this.config.fbConnection.fbRef.child(childpath)[method](msg.payload, this.fbOnComplete.bind(this)); //TODO: Why doesn't the Firebase API support passing a context to these calls?
-                break;
-              case "remove":
-                this.fbRequests.push(msg)
-                this.config.fbConnection.fbRef.child(childpath)[method](this.fbOnComplete.bind(this));
-                break;
-              default:
-                this.error("Invalid msg.method property \"" + method + "\".  Expected one of the following: [\"" + Object.keys(this.validMethods).join("\", \"") + "\"].", msg)
-                break;
+            case "set":
+            case "update":
+            case "push":
+              this.fbRequests.push(msg)
+              this.config.fbConnection.fbRef.child(childpath)[method](msg.payload, this.fbOnComplete.bind(this)); //TODO: Why doesn't the Firebase API support passing a context to these calls?
+              break;
+            case "remove":
+              this.fbRequests.push(msg)
+              this.config.fbConnection.fbRef.child(childpath)[method](this.fbOnComplete.bind(this));
+              break;
+            case "setPriority":
+              this.fbRequests.push(msg)
+              this.config.fbConnection.fbRef.child(childpath)[method](priority, this.fbOnComplete.bind(this));
+              break;
+            case "setWithPriority":
+              this.fbRequests.push(msg)
+              this.config.fbConnection.fbRef.child(childpath)[method](msg.payload, priority, this.fbOnComplete.bind(this));
+              break;
+            default:
+              this.error("Invalid msg.method property \"" + method + "\".  Expected one of the following: [\"" + Object.keys(this.validMethods).join("\", \"") + "\"].", msg)
+              break;
           }
         } else {
           this.warn("Received msg before firebase modify node was ready.  Not processing: " + JSON.stringify(msg, null, "\t"))

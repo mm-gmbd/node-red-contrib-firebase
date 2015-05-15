@@ -93,7 +93,6 @@ module.exports = function(RED) {
             }
           }
 
-
           msg.eventType = eventType;
           msg.childpath = childpath || "/";
           this.activeRequests.push(msg)

@@ -10,6 +10,7 @@ module.exports = function(RED) {
         RED.nodes.createNode(this,n);
 
         this.config = RED.nodes.getNode(n.firebaseconfig);
+        this.name = n.name;
         this.childpath = n.childpath;
         this.method = n.method;
         this.value = n.value;
@@ -96,9 +97,6 @@ module.exports = function(RED) {
         this.config.fbConnection.on("error", this.fbError)
         this.config.fbConnection.on("closed", this.fbClosed)
 
-
-        this.log("setting initial state to [fb" + this.config.fbConnection.lastEvent.capitalize()+ "]("+this.config.fbConnection.lastEventData+")" )
-
         //set initial state (depending on the deployment strategy, for newly deployed nodes, some of the events may not be refired...)
         switch(this.config.fbConnection.lastEvent) {
           case "initailizing":
@@ -116,7 +114,6 @@ module.exports = function(RED) {
           default:
             this.error("Bad lastEvent Data from Config Node - " + this.config.fbConnection.lastEvent)
         }
-
 
         this.on('input', function(msg) {
           if(this.ready){
@@ -197,8 +194,20 @@ module.exports = function(RED) {
     }
     RED.nodes.registerType("firebase ondisconnect", FirebaseOnDisconnect);
 
-    RED.httpAdmin.get('/firebase/js/*', function(req, res){
-       var filename = path.join(__dirname , '../static/js', req.params[0]);
-       res.sendfile(filename);
-   });
+    RED.httpAdmin.post("/firebase/:id/cancelOnDisconnect", RED.auth.needsPermission("firebase.write"), function(req,res) {
+            var node = RED.nodes.getNode(req.params.id);
+            if (node !== null && typeof node !== "undefined" ) {
+              if(node.ready){
+                node.config.fbConnection.fbRef.onDisconnect().cancel(function(error){
+                  if(error){
+                    res.send(502, error)
+                  } else{
+                    res.send(200)
+                  }
+                }) //Cancel all previously queued onDisconnect() set or update events for this location and all children
+              }
+            } else {
+                res.send(404);
+            }
+        });
 };

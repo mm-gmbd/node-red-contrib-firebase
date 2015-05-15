@@ -34,6 +34,9 @@
 <script type="text/x-red" data-help-name="firebase ondisconnect">
    <p>Allows you to write or clear data when your client disconnects from the Firebase servers.</p>
    <p>These updates occur whether your client disconnects cleanly or not, so you can rely on them to clean up data even if a connection is dropped or a client crashes.</p>
+   <p>If static values are used, .onDisconnect() will register with Firebase as soon as authentication has been performed.  Otherwise it waits for input from an upstream node</p>
+
+   <p>Clicking the button on the right side of the node will cancel ALL onDisconnect() events that have previously been set.</p>
 
    <p>The value sent to Firebase will be the last received msg.payload.  If no msg.payload is received, then no onDisconnect event will be sent to Firebase.</p> <!-- //TODO:  Really we should allow a user to set whether the value is msg.payload or a predetermined value (including Firebase.ServerValue.TIMESTAMP) -->
 
@@ -67,6 +70,8 @@
 </script>
 
 <script type="text/javascript">
+
+
     RED.nodes.registerType('firebase ondisconnect', {
         category: 'firebase',       // the palette category
         defaults: {                 // defines the editable properties of the node
@@ -80,32 +85,60 @@
         icon: 'firebase.png',       // saved in  icons/myicon.png
         inputs: 1,                  // set the number of inputs - only 0 or 1
         outputs: 0,                 // set the number of outputs - 0 to n
-
+        align: "right",
         paletteLabel: "firebase.onDisconnect()",
 
-        label: function () {        // sets the default label contents
+        label: function() {        // sets the default label contents
           var method = "." + this.method
           if(method == ".msg.method")
             method = "[msg.method]"
 
           method = ".onDisconnect()" + method
-
           method += "("+this.value+")" || "()"
 
-          var config = RED.nodes.node(this.firebaseconfig); //server side uses RED.nodes.getNode... go figure...
 
+          var childpath = this.childpath || ""
           // make sure the path starts with /
-          var childpath = (this.childpath.indexOf("/") == 0) ? this.childpath : "/" + this.childpath;
+          childpath = (childpath.indexOf("/") == 0) ? childpath : "/" + childpath;
           //make sure the path does not end with /
           childpath = childpath.substr(-1) == "/" ? childpath.slice(0,-1) : childpath
 
+          var config = RED.nodes.node(this.firebaseconfig); //server side uses RED.nodes.getNode... go figure...
+
           return this.name ||
-                (config ? "https://"+config.firebaseurl+".firebaseio.com"+(childpath||"") + method : childpath + method) ||
+                (config ? "https://"+config.firebaseurl+".firebaseio.com"+ childpath + method : childpath + method) ||
                 "firebase" + method;
         },
 
         labelStyle: function () {   // sets the class to apply to the label
             return this.name ? "node_label_italic" : "";
+        },
+
+        button: {
+            // toggle: "active",
+            onclick: function() {
+                var label = this._def.label.call(this);
+                $.ajax({
+                    url: "firebase/"+this.id+"/cancelOnDisconnect",
+                    type: "POST",
+                    success: function(resp, textStatus, xhr) {
+                        if (xhr.status == 200) {
+                            RED.notify("Successfully cancelled "+label,"success");
+                        }
+                    },
+                    error: function(jqXHR,textStatus,errorThrown) {
+                        if (jqXHR.status == 404) {
+                            RED.notify("<strong>Error</strong>: firebase.onDisconnect() node not deployed","error");
+                        } else if (jqXHR.status == 502) {
+                            RED.notify("<strong>Error</strong>: Firebase Error: " + jqXHR.responseText,"error");
+                        }else if (jqXHR.status == 0) {
+                            RED.notify("<strong>Error</strong>: no response from server","error");
+                        } else {
+                            RED.notify("<strong>Error</strong>: unexpected error: ("+err.status+") "+err.response,"error");
+                        }
+                    }
+                });
+            }
         },
 
         oneditprepare: function(){

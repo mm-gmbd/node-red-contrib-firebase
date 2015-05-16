@@ -22,7 +22,7 @@ module.exports = function(RED) {
         this.validMethods = {
           "set": true,
           "update": true,
-          "remove": true//,
+          "remove": true,
           "setWithPriority": true,
           "cancel": true
         }

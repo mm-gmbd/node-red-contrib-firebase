@@ -41,7 +41,7 @@ module.exports = function (RED) {
 
     //connectionPool is responsible for managing Firebase Connections, Authentication, etc.
     //connectionPool emits the following events:
-      //initailizing
+      //initializing
       //connected
       //disconnected
       //authorized
@@ -83,7 +83,7 @@ module.exports = function (RED) {
                 secret: null,
                 passORuid: null,  //TODO: Probably should clean this up similair to the config node to make it less confusing what is going on...
                 nodeCount: 0,
-                lastEvent: "initailizing",
+                lastEvent: "initializing",
                 lastEventData: null,
                 httpRequests: {},
 
@@ -219,7 +219,7 @@ module.exports = function (RED) {
               _emit = _emit.bind(obj);
               _emitter.setMaxListeners(0);  //Suppress Memory Leak warnings, 0 means unlimited listeners
               process.nextTick(function(){
-                _emitter.emit("initailizing");  //_emit would suppress this because of the default value...
+                _emitter.emit("initializing");  //_emit would suppress this because of the default value...
                 obj.fbRef.child(".info/connected").on("value", obj.onConnectionStatusChange, obj);
               }.bind(obj))
 
@@ -263,9 +263,9 @@ module.exports = function (RED) {
 
         this.fbConnection = connectionPool.get(this.firebaseurl)
 
-        this.fbConnection.on("initailizing", function(){
-          // this.log("initailizing to " + this.firebaseurl)
-          this.status({fill:"grey", shape:"ring", text:"initailizing..."})
+        this.fbConnection.on("initializing", function(){
+          // this.log("initializing to " + this.firebaseurl)
+          this.status({fill:"grey", shape:"ring", text:"initializing..."})
         }.bind(this))
 
         this.fbConnection.on("connected", function(){

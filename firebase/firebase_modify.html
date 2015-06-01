@@ -84,7 +84,7 @@
       </li>
     </ul>
 
-   <p>Optional: <strong>msg.childpath</strong> is the name of a message property that can be used to dynamically set the .child() on the Firebase URL.  This requires that the <em>childpath</em> property is left blank in the node's edit dialog box.</p> <!-- ' -->
+   <p>Optional: <strong>msg.childpath</strong> is the name of a message property that can be used to dynamically set the .child() on the Firebase URL.  This requires that the <em>childpath</em> property is set to <em>msg.childpath</em> in the node's edit dialog box.</p> <!-- ' -->
 
    <p>Optional: <strong>msg.method</strong> is the name of a message property that can be used to dynamically set the Firebase API method that is used.  This requires that the <em>method</em> property is set to <em>msg.method</em> in the node's edit dialog box.</p> <!-- ' -->
 
@@ -153,6 +153,24 @@
           });
 
           $('#node-input-value').on('focusout', function(){
+            $(this).autocomplete("close");
+          });
+
+          //Set up autocomplete for Childpath field
+          var defaultChildpathValues = [
+            "msg.childpath",
+          ];
+
+          $('#node-input-childpath').autocomplete({
+            source: defaultChildpathValues,
+            minLength: 0
+          });
+
+          $('#node-input-childpath').on('focusin', function(){
+            $(this).autocomplete("search", "");
+          });
+
+          $('#node-input-childpath').on('focusout', function(){
             $(this).autocomplete("close");
           });
 

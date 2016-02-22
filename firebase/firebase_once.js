@@ -3,7 +3,22 @@ module.exports = function(RED) {
     var https = require("follow-redirects").https;
     var urllib = require("url");
 
+    var getPushIdTimestamp = (function getPushIdTimestamp() {
+      var PUSH_CHARS = '-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz';
 
+      return function getTimestampFromId(id) {
+        try {
+          var time = 0;
+          var data = id.substr(0, 8);
+
+          for (var i = 0; i < 8; i++) {
+            time = time * 64 + PUSH_CHARS.indexOf(data[i]);
+          }
+
+          return time;
+        } catch(ex){}
+      }
+    })();
 
     function FirebaseOnce(n) {
         RED.nodes.createNode(this,n);
@@ -58,6 +73,8 @@ module.exports = function(RED) {
               msg.priority = snapshot.getPriority();
             if(prevChildName)
               msg.previousChildName = prevChildName;
+            if(this.eventType.search("child") != -1 && getPushIdTimestamp(msg.key))  //We probably have a pushID that we can decode
+              msg.pushIDTimestamp = getPushIdTimestamp(msg.key)
 
             this.send(msg);
             this.setStatus();

@@ -90,7 +90,7 @@ module.exports = function (RED) {
                 on: function(a,b) { _emitter.on(a,b); },
                 once: function(a,b) { _emitter.once(a,b); },
 
-                authorize: function(loginType, secret, passORuid){
+                authorize: function(loginType, secret, passORuid, jwtClaims){
                   //console.log("Attempting to authorize with loginType="+loginType+" with secret="+secret+" and pass/uid="+passORuid)
 
                   if(this.loginType && this.authData){
@@ -119,12 +119,16 @@ module.exports = function (RED) {
                           this.fbRef.onAuth(this.onAuth, this);
                           break;
                       case 'customGenerated':
-                          var tokenGenerator = new FirebaseTokenGenerator(secret);
+                            var tokenGenerator = new FirebaseTokenGenerator(secret);
                             // expires (Number) - A timestamp (as number of seconds since the epoch) denoting the time after which this token should no longer be valid.
                             // notBefore (Number) - A timestamp (as number of seconds since the epoch) denoting the time before which this token should be rejected by the server.
                             // admin (Boolean) - Set to true if you want to disable all security rules for this client. This will provide the client with read and write access to your entire Firebase.
                             // debug (Boolean) - Set to true to enable debug output from your security rules. This debug output will be automatically output to the JavaScript console. You should generally not leave this set to true in production (as it slows down the rules implementation and gives your users visibility into your rules), but it can be helpful for debugging.
-                            var token = tokenGenerator.createToken({uid: passORuid, generator: "node-red"});
+                            var tokenArgs = {uid: passORuid, generator: "node-red"}
+                            for(var i = 0; i < jwtClaims.length; i++)
+                              tokenArgs[jwtClaims[i].key] = jwtClaims[i].value
+
+                            var token = tokenGenerator.createToken(tokenArgs);
 
                             this.fbRef.authWithCustomToken(token, this.onLoginAuth.bind(this))
                             this.fbRef.onAuth(this.onAuth, this);
@@ -260,6 +264,7 @@ module.exports = function (RED) {
         this.secret = this.credentials.secret;
         this.email = this.credentials.email;
         this.password = this.credentials.password;
+        this.jwtClaims = JSON.parse(this.credentials.jwtClaims != undefined ? this.credentials.jwtClaims : "[]");
 
         this.fbConnection = connectionPool.get(this.firebaseurl, this.id)
 
@@ -282,7 +287,7 @@ module.exports = function (RED) {
                 this.fbConnection.authorize(this.loginType, this.email, this.password);
                 break;
               case 'customGenerated':
-              this.fbConnection.authorize(this.loginType, this.secret, this.uid);
+              this.fbConnection.authorize(this.loginType, this.secret, this.uid, this.jwtClaims);
                 break;
               case 'facebook': //TODO:
                 break;
@@ -340,6 +345,7 @@ module.exports = function (RED) {
           secret: {type: 'password'},
           email: {type: 'text'},
           password: {type: 'password'},
+          jwtClaims: {type: 'text'}
       }
     });
 }

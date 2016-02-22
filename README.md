@@ -7,7 +7,6 @@ The goal of this project is to provide an elegant GUI that allows you to interac
 
 As a side benefit, these nodes should be a natural complement to the data explorer interface offered by the Firebase Forge and a faster/easier to use tool than diving straight into the programming libraries offered for all of the <A HREF="https://www.firebase.com/docs/">Firebase supported platforms</A>.
 
-This project is a work in progress and currently only supports connections to Firebases without Authentication or those secured with Email and Password Authentication (other flavors are coming...)
 
 #Install
 
@@ -17,7 +16,9 @@ Run the following command after you have done a global install of Node-RED (as d
 
 ##Manual Installation
 #####The following instructions assume a standard installation of Node-Red.  Please adjust directories accordingly if a non-standard installation is used.  
+
 #####The Node-Red _user directory_ is printed to the Terminal whenever Node-Red is launched.
+
 #####Windows users will need to replace "$HOME" with "%HOMEPATH%" and replace forwardslashes with backslashes.
 
 To manually install :
@@ -54,14 +55,9 @@ To use the nodes, launch Node-RED (see <A HREF="http://nodered.org/docs/getting-
 The firebase nodes will appear in their own "firebase" catagory on the Node-Red pallet. Drag and drop any node onto the canvas and configure as you would any other node-red node.  Node specific configuration information for each node is included in the info pane in Node-Red.
 
 #Updates
-While every effort is made to minimize breaking changes this project is young so that may happen from time to time.  I will try to keep these changes to X.X version releases (minor versions are safe).
+the project uses Semantic Versioning so hopefully no big surprises.
 
-If you find that things are acting strangely after updating to a new version, dragging a fresh node onto the workspace from the pallete (potentially with fresh config nodes) should clear it up.
-
-###Limitations
-All references to a Firebase share the same authentication status, so if you create two config nodes pointing to the same Firebase they will end up sharing identical authentication credentials (whichever configuration node authenticates last will "win").
-
-See <A HREF="http://stackoverflow.com/questions/25374999/multiple-firebases-instances">http://stackoverflow.com/questions/25374999/multiple-firebases-instances</A> for more information on this issue.  
+Unfortunatley, Node-RED is a bit "stickier" than a traditional node.js app.  If you find that things are acting strangely after updating to a new version, dragging a fresh node onto the workspace from the pallete (potentially with fresh config nodes) should clear it up.
 
 #Example Application
 If you are brand new to Node-Red, one simple way to get started is to use an existing flow.

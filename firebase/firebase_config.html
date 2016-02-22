@@ -7,10 +7,6 @@
         .firebaseio.com/
     </div>
 
-    <div id="node-config-input-firebaseurl-input-error-container" class="form-tips hidden">
-      <p id="node-config-input-firebaseurl-input-error" class="text-center" style="margin: 0;"><strong>Firebase <span id="fb-error-name"></span> already added!</strong></p>
-    </div>
-
     <!-- Select type -->
     <div class="form-row">
         <label for="loginType-select"><i class="fa fa-shield"></i> Auth Type</label>
@@ -144,46 +140,6 @@
 
                 //TODO: Possible node-red bug? It looks like defaults don't get set automatically in config nodes?
                 $("#node-config-input-firebaseurl").val(this.firebaseurl)
-
-                if (!this.firebaseurl){
-                  $("#node-config-input-firebaseurl").on('input', function(){
-                    var val = $(this).val(); //check against $('#node-input-firebaseconfig')
-                    var invalid = false;
-                    $('#node-input-firebaseconfig option').each(function(idx){
-                      //console.log($(this).val());
-                      if ($(this).val() != "_ADD_"){
-                        //TODO: This needs to be cleaned up (gets "pvm-alpha" from https://pvm-alpha.firebaseio.com)
-                        var url = $(this).text();
-                        var arr = url.split("//");
-                        var arr2 = arr[1].split(".");
-                        var prefix = arr2[0];
-                        if (val == prefix){
-                          invalid = true;
-                          return; //this is how to break out of $.each
-                        }
-                      }
-                    });
-
-                    //Check whether or not input is invalid
-                    if (invalid){
-                      //console.log("ERROR: Matching stuff!")
-                      $('#fb-error-name').text('"'+$('#node-config-input-firebaseurl').val()+'"');
-                      $('#node-config-input-firebaseurl-input-error-container').removeClass('hidden');
-                      $('#node-config-input-firebaseurl').addClass("input-error");
-                      $('#node-config-input-firebaseurl').css("background-color", "#FF6347");
-                      $('#node-config-dialog-ok').prop('disabled', true);
-                    } else {
-                      // console.log("ERROR: Matching stuff!")
-                      if (!$('#node-config-input-firebaseurl-input-error-container').hasClass('hidden'))
-                        $('#node-config-input-firebaseurl-input-error-container').addClass('hidden');
-
-                      $('#node-config-input-firebaseurl').removeClass("input-error")
-                      $('#node-config-input-firebaseurl').css("background-color", "");
-                      $('#node-config-dialog-ok').prop('disabled', false);
-                    }
-                  });
-                }
-
 
                 $('.login-row').hide();
                 if (this.loginType) {

@@ -48,14 +48,14 @@ module.exports = function (RED) {
       //unauthorized
       //error //TODO: need to wrap everything in a try/catch to make sure we don't ever crash node-red
       //closed
-    var connectionPool = function(){
+    var connectionPool = function(){  //TODO: This could probably be refactored to be a bit simpler now...
       var connections = {}
 
       return {
-        get: function(firebaseurl){
-          if(!connections[firebaseurl]){ //Lazily create a new Firebase Reference if it does not exist
+        get: function(firebaseurl, configNodeID){
+          if(!connections[configNodeID]){ //Lazily create a new Firebase Reference if it does not exist
 
-            connections[firebaseurl] = function(){
+            connections[configNodeID] = function(){
 
               //Private
               var _emitter = new events.EventEmitter();
@@ -77,7 +77,7 @@ module.exports = function (RED) {
                 Firebase: Firebase,  //Needed for Firebase.ServerValue.TIMESTAMP...
 
                 firebaseurl: firebaseurl,  //TODO: Some of this data is duplicated...
-                fbRef: new Firebase(firebaseurl),
+                fbRef: new Firebase(firebaseurl, configNodeID), //Including a second argument is a hack which allows us to have multiple auths connected to the same Firebase - see https://github.com/deldrid1/node-red-contrib-firebase/issues/3
                 authData: null, //TODO: Some of this data is duplicated...
                 loginType: null,
                 secret: null,
@@ -227,20 +227,20 @@ module.exports = function (RED) {
             }();
           }
 
-          connections[firebaseurl].nodeCount++;
+          connections[configNodeID].nodeCount++;
 
-          return connections[firebaseurl]
+          return connections[configNodeID]
         },
 
-        close: function(firebaseurl){
-          var obj = connections[firebaseurl]
+        close: function(configNodeID){
+          var obj = connections[configNodeID]
 
           obj.nodeCount--
 
           if(obj.nodeCount == 0){
             obj.close()
 
-            delete connections[firebaseurl]
+            delete connections[configNodeID]
             //TODO: BUG: there is not way to do close/kill a connection with the current Firebase Library.  It is a low priority for them but is scheduled for release middle of 2015...    http://stackoverflow.com/questions/27641764/how-to-destroy-firebase-ref-in-node
           }
         }
@@ -261,7 +261,7 @@ module.exports = function (RED) {
         this.email = this.credentials.email;
         this.password = this.credentials.password;
 
-        this.fbConnection = connectionPool.get(this.firebaseurl)
+        this.fbConnection = connectionPool.get(this.firebaseurl, this.id)
 
         this.fbConnection.on("initializing", function(){
           // this.log("initializing to " + this.firebaseurl)
@@ -329,7 +329,7 @@ module.exports = function (RED) {
         this.on('close', function() {
             this.status({fill: "gray", shape: "dot", text:"connection closed"})
             // We need to unbind our callback, or we'll get duplicate messages when we redeploy
-            connectionPool.close(this.firebaseurl)
+            connectionPool.close(this.id)
         });
     }
 

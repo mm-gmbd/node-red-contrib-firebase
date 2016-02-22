@@ -35,7 +35,7 @@
 
     <div id="jwt-claims-container" class="form-row login-row login-row-customGenerated hidden">
       <label for="node-input-add-jwt-claim"><i class="fa fa-asterisk"></i> JWT Claims</label>
-      <a href="#" class="btn btn-mini" id="node-input-add-jwt-claim" style="margin-top: 4px;"><i class="fa fa-plus"></i> claim</a>
+      <a href="#" class="btn btn-mini" id="node-input-add-jwt-claim" style="margin-top: 4px;"><i class="fa fa-plus"></i> add additional claims</a>
     </div>
 
     <!-- //TODO: this node would be formatted nicer if #node-inpu-query-container-div was hidden until a query was added (or already present)... -->
@@ -200,7 +200,7 @@
                     //Check if input already has text
                     if ($input.val() == null || $input.val().length == 0){
                       $input.addClass('input-error');
-                      $('#node-dialog-ok').prop('disabled', true);
+                      $('node-config-dialog-ok').prop('disabled', true);
                     }
 
                     //Set up handler
@@ -208,12 +208,12 @@
                     $input.on('input', function(){
                       if ($(this).val().length == 0){
                         $(this).addClass('input-error');
-                        $('#node-dialog-ok').prop('disabled', true);
+                        $('node-config-dialog-ok').prop('disabled', true);
                       } else {
                         $(this).removeClass('input-error');
                         //Check all other inputs and see whether or not they have text
-                        if (checkInputsNotEmpty() && checkSelectsNotEmpty()) $('#node-dialog-ok').prop('disabled', false);
-                        else $('#node-dialog-ok').prop('disabled', true);
+                        if (checkInputsNotEmpty() && checkSelectsNotEmpty()) $('node-config-dialog-ok').prop('disabled', false);
+                        else $('node-config-dialog-ok').prop('disabled', true);
                       }
                     });
                     $input.fadeIn(300);
@@ -226,8 +226,8 @@
                   $input.off('input'); //remove listener
                   $input.hide();
                   //Check all other inputs and see whether or not they have text
-                  if (checkInputsNotEmpty() && checkSelectsNotEmpty()) $('#node-dialog-ok').prop('disabled', false);
-                  else $('#node-dialog-ok').prop('disabled', true);
+                  if (checkInputsNotEmpty() && checkSelectsNotEmpty()) $('node-config-dialog-ok').prop('disabled', false);
+                  else $('node-config-dialog-ok').prop('disabled', true); //TODO: BUG: These are no longer working but it's not the end of the world because the generated JWT's are still valid...
                 }
 
                 function generatejwtClaim(jwtClaims){
@@ -256,7 +256,7 @@
                       var jwtClaims = $('#node-input-jwt-claims-container').children();
                       if (jwtClaims.length == 0){ //If there are no jwtClaims left, hide container
                         $('#node-input-jwt-claims-overall').hide();
-                        $('#node-dialog-ok').prop('disabled', false);
+                        $('node-config-dialog-ok').prop('disabled', false);
                       }
                     });
                   });

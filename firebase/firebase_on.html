@@ -72,7 +72,7 @@
    <p>Supply a Firebase configuration and this node will watch for any changes at that location and generate messages.</p>
 
    <p>This node outputs an object called <b>msg</b> containing <b>msg.href</b>, <b>msg.key</b>, and
-   <b>msg.payload</b>. Depending on the event type and data available <b>msg.priority</b>
+   <b>msg.payload</b>. Depending on the event type and data available <b>msg.priority</b>, <b>msg.pushIDTimestamp</b>
    and <b>msg.previousChildName</b> may also be set:
    <ul>
      <li>
@@ -89,7 +89,10 @@
         <strong><em>msg.priority</em></strong> - <em>(optional)</em> the priority of the Firebase data
      </li><br />
      <li>
-        <strong><em>msg.previousChildName</em></strong> - <em>(optional)</em> the key for the previous child of the Firebase data (this will be available, for ordering purposes, if "child_added", "child_changed", or "child_moved" is selected as the event)
+        <strong><em>msg.pushIDTimestamp</em></strong> - <em>(optional)</em> the timestamp as decoded from the key of the event, which is assumed to be a Firebase Push ID (this will be available if "child_added", "child_changed", "child_moved", or "child_removed" is selected as the event)
+     </li><br />
+     <li>
+        <strong><em>msg.previousChildName</em></strong> - <em>(optional)</em> the key for the previous child of the Firebase data (this will be available, for ordering purposes, if "child_added", "child_changed", "child_moved", or "child_removed" is selected as the event)
      </li>
    </ul>
 

@@ -3,9 +3,9 @@ node-red-contrib-firebase
 
 <A HREF="http://nodered.org">node-red</A> <A HREF="http://nodered.org/docs/creating-nodes/">nodes</A> for interacting with <A HREF="https://www.firebase.com/">Firebase</A>.
 
-The goal of this project is to provide an elegant GUI that allows you to interact with your Firebase data using Node-Red.  
+The goal of this project is to provide an elegant GUI that allows you to interact with your Firebase data using Node-Red.
 
-As a side benefit, these nodes should be a natural complement to the data explorer interface offered by the Firebase Forge and a faster/easier to use tool than diving straight into the programming libraries offered for all of the <A HREF="https://www.firebase.com/docs/">Firebase supported platforms</A>.  
+As a side benefit, these nodes should be a natural complement to the data explorer interface offered by the Firebase Forge and a faster/easier to use tool than diving straight into the programming libraries offered for all of the <A HREF="https://www.firebase.com/docs/">Firebase supported platforms</A>.
 
 This project is a work in progress and currently only supports connections to Firebases without Authentication or those secured with Email and Password Authentication (other flavors are coming...)
 
@@ -124,17 +124,6 @@ For more information, feedback, or community support on Node-Red, see the <A HRE
 
 - Make some errors "sticky" so we don't report innappropriate status in case the page is loaded after initial deploy as the errors could be missed later and make debugging flows difficult (need to come up with a list of what is/isn't recoverable and under what conditions...)
 
-- Once Firebase allows multiple references to have different authentications, we will need to change the singleton architecture that we have in place currently...
-
-- Validation on HTML and Javascript, ensuring that only a single firebaseurl is allowed in a config node at a time (due to the way firebase auth works)
-
-- Add ability to set .priorities with firebase_modify nodes (none, timestamp, number, string, msg.priority, etc.)
-
-- Extend .on to optionally allow for Firebase queries
-  orderby*, startAt (value and key for orderbypriority), endAt (value and key for orderbypriority), equalTo, limitToFirst, limitToLast, limit, etc.
-
-- Add support for remaining Firebase Authentication strategies including facebook, twitter, GitHub and Google. (the twitter Node likely should provide good inspiration for how to do this)
-
-- Add support for .ondisconnect to allow nodes to manage presence
+- Add support for remaining Firebase Authentication strategies including facebook, twitter, GitHub and Google. (the Twitter Node likely should provide good inspiration for how to do this)
 
 - Expose more of the Firebase API and add nodes for creating users, updating passwords, etc.?

@@ -49,7 +49,7 @@ module.exports = function(RED) {
             var node = RED.nodes.getNode(req.params.id);
             if (node !== null && typeof node !== "undefined" ) {
                 node.send({payload: node.config.fbConnection.authData});
-                res.send(200)
+                res.sendStatus(200)
             } else {
                 res.send(404);
             }

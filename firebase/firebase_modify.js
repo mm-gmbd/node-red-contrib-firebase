@@ -40,6 +40,8 @@ module.exports = function(RED) {
           if(error){
             this.log("firebase synchronization failed")
             this.error("firebase synchronization failed - " + error, msg)
+          } else {
+          	this.send(msg)
           }
       }.bind(this);
 
@@ -175,9 +177,14 @@ module.exports = function(RED) {
           switch (method){
             case "set":
             case "update":
-            case "push":
               this.fbRequests.push(msg)
               this.config.fbConnection.fbRef.child(childpath)[method](msg.payload, this.fbOnComplete.bind(this)); //TODO: Why doesn't the Firebase API support passing a context to these calls?
+              break;
+            case "push":
+              var pushRef = this.config.fbConnection.fbRef.child(childpath)[method]();
+              msg.pushID = pushRef.key();
+              this.fbRequests.push(msg)
+              pushRef.set(msg.payload, this.fbOnComplete.bind(this)); //TODO: Why doesn't the Firebase API support passing a context to these calls?
               break;
             case "remove":
               this.fbRequests.push(msg)

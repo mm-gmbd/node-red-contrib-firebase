@@ -88,11 +88,19 @@
 
    <p>Optional: <strong>msg.method</strong> is the name of a message property that can be used to dynamically set the Firebase API method that is used.  This requires that the <em>method</em> property is set to <em>msg.method</em> in the node's edit dialog box.</p> <!-- ' -->
 
+   <p>The node's output port will send the original message once Firebase acknowledges that the Firebase has been written.
+   If the .push() method is used, <strong>msg.pushID</strong> will contain the new pushID created on Firebase.
+   </p>
+   
    <p><strong><em>WARNING:</em></strong><br />
    It is possible to cause an endless loop if an upstream node watches the data set here.<br />
    (This node writes to "/foo", an upstream node watching "/foo" or / will generate a message leading this node to write to /foo.)
    </p>
    <p>If in doubt, add a Delay node.</p>
+   
+   <p>The node's output port will send the original message once Firebase acknowledges that the Firebase has been written.<br />
+   If the .push() method is used, <strong>msg.pushID</strong> will contain the new pushID created on Firebase.
+   </p>
 
 </script>
 
@@ -111,7 +119,7 @@
         icon: 'firebase.png',       // saved in  icons/myicon.png
         align: 'right',
         inputs: 1,                  // set the number of inputs - only 0 or 1
-        outputs: 0,                 // set the number of outputs - 0 to n
+        outputs: 1,                 // set the number of outputs - 0 to n
 
         label: function () {        // sets the default label contents
           var method = "." + this.method +"()"

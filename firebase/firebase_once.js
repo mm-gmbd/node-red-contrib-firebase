@@ -27,6 +27,7 @@ module.exports = function(RED) {
         this.childpath = n.childpath;
         this.eventType = n.eventType;
         this.queries = n.queries;
+        this.repeatifnull = n.repeatifnull;
 
         this.activeRequests = [];
         this.ready = false;
@@ -73,10 +74,15 @@ module.exports = function(RED) {
               msg.priority = snapshot.getPriority();
             if(prevChildName)
               msg.previousChildName = prevChildName;
-            if(this.eventType.search("child") != -1 && getPushIdTimestamp(msg.key))  //We probably have a pushID that we can decode
+            if(this.eventType.search("child") != -1 || msg.key.length == 20 && getPushIdTimestamp(msg.key))  //We probably have a pushID that we can decode
               msg.pushIDTimestamp = getPushIdTimestamp(msg.key)
 
-            this.send(msg);
+            if(this.repeatifnull && msg.payload == null && msg.attemptNumber++ < 100 ){ // Repeat sending the request.  //TODO: we could use a configurable timer in seconds or a configurable number of attempts
+              this.registerListeners(msg)
+            } else {
+              this.send(msg);
+            }
+
             this.setStatus();
         }.bind(this);
 
@@ -103,15 +109,21 @@ module.exports = function(RED) {
             return;
           }
 
+          //Parse out msg.childpath
           var childpath = this.childpath
-          if(!childpath || childpath == ""){
+          if(childpath == "msg.childpath"){
             if("childpath" in msg){
               childpath = msg.childpath
             }
           }
+          childpath = childpath || "/"
 
           msg.eventType = eventType;
           msg.childpath = childpath || "/";
+
+          if(!msg.attemptNumber)
+            msg.attemptNumber = 0
+
           this.activeRequests.push(msg)
 
           if(msg.eventType == "shallow_query"){
@@ -273,7 +285,11 @@ module.exports = function(RED) {
                     this.status({fill:"red",shape:"ring",text:msg.payload.error || "error"});
                     setTimeout(this.setStatus, 5000)  //Reset back to the Firebase status after 5 seconds
                   } else {
-                    this.send(msg);
+                    if(this.repeatifnull && msg.payload == null && msg.attemptNumber++ < 100 ){ // Repeat sending the request
+                      this.registerListeners(msg)
+                    } else {
+                      this.send(msg);
+                    }
                     this.setStatus();
                   }
               }.bind(this));

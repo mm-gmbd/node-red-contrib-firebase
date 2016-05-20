@@ -26,6 +26,11 @@
       <input type="hidden" id="node-input-eventType">
     </div>
 
+    <div class="form-row">
+        <label for="node-input-repeatifnull" style="width: 210px"><i class="fa fa-refresh"></i> Repeat request if value is null?</label>
+        <input type="checkbox" id="node-input-repeatifnull" style="display: inline-block; width: auto; vertical-align: top;">
+    </div>
+
     <div id="eventType-select-info-container" class="form-tips hidden" style="margin-bottom: 10px;">
       <p id="eventType-select-info" class="text-center" style="margin: 0;"><strong>Additional parameters not supported with shallow queries.</strong></p>
     </div>
@@ -138,6 +143,11 @@
        The <em>[msg.eventType]</em> allows for the passage of any of the event types listed above.
      </li>
    </ul>
+
+   <p>By checking the repeat request if null, the node will attempt up to 100 times to poll the location for a non-null value.</p>
+
+   <p>Optional: <strong>msg.childpath</strong> is the name of a message property that can be used to dynamically set the .child() on the Firebase URL.  This requires that the <em>childpath</em> property is set to <em>msg.childpath</em> in the node's edit dialog box.</p>
+
  </script>
 
 <script type="text/javascript">
@@ -147,6 +157,7 @@
             name: {value:''},   //  along with default values.
             firebaseconfig:  {type:'firebase config',required:true},
             childpath: {value: '', required: false},
+            repeatifnull: {value: false, required: true},
             eventType: {value: "value", required: true},
             queries: {value:[], required: true},
         },
@@ -184,6 +195,16 @@
           //Set the select's to the node-red hidden properties
           $("#eventType-select").val($("#node-input-eventType").val())
           $('#eventType-select').trigger('change');
+
+          //Set up autocomplete for Childpath field
+          var defaultChildpathValues = [
+            "msg.childpath",
+          ];
+
+          $('#node-input-childpath').autocomplete({
+            source: defaultChildpathValues,
+            minLength: 0
+          });
 
           //Most of this code is adapted from the switch node - https://raw.githubusercontent.com/node-red/node-red/master/nodes/core/logic/10-switch.html
           var operatorOptions = {

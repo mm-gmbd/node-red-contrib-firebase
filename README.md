@@ -1,6 +1,8 @@
 node-red-contrib-firebase
 =========================
 
+<span class="badge-npmversion">[![NPM version](https://img.shields.io/npm/v/node-red-contrib-firebase.svg)](https://npmjs.org/package/node-red-contrib-firebase "View this project on NPM")</span> <span class="badge-npmdownloads">[![NPM downloads](https://img.shields.io/npm/dm/node-red-contrib-firebase.svg)](https://npmjs.org/package/node-red-contrib-firebase "View this project on NPM")</span>
+
 <A HREF="http://nodered.org">node-red</A> <A HREF="http://nodered.org/docs/creating-nodes/">nodes</A> for interacting with <A HREF="https://www.firebase.com/">Firebase</A>.
 
 The goal of this project is to provide an elegant GUI that allows you to interact with your Firebase data using Node-Red.

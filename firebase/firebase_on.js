@@ -29,12 +29,23 @@ module.exports = function(RED) {
 
         this.ready = false;
         this.ignoreFirst = this.atStart;
+        this.authorized = false;
+        this.msg = null;
 
         // Check credentials
         if (!this.config) {
             this.status({fill:"red", shape:"ring", text:"invalid credentials"})
             this.error('You need to setup Firebase credentials!');
             return
+        }
+
+        this.validEventTypes = {
+          "value": true,
+          "child_added": true,
+          "child_changed": true,
+          "chiled_removed": true,
+          "child_moved": true,
+          "shallow_query": true
         }
 
         this.onFBValue = function(snapshot, prevChildName) {
@@ -73,7 +84,7 @@ module.exports = function(RED) {
           setTimeout(this.setStatus, 5000)  //Reset back to the Firebase status after 5 seconds
         }.bind(this);
 
-        this.registerListeners = function(){
+        this.registerListeners = function(msg){
           //this.log("Registering Listener for " + this.config.firebaseurl + (this.childpath || ""))
 
           if(this.ready == true)
@@ -82,17 +93,11 @@ module.exports = function(RED) {
           this.ready = true;
           this.ignoreFirst = this.atStart;  //Reset if we are re-registering listeners
 
-          if(this.childpath){
-            this.config.fbConnection.fbRef.child(this.childpath)
-          }else{
-            this.config.fbConnection.fbRef.on(this.eventType, this.onFBValue, this.onFBError, this);
-          }
-
           //Create the firebase reference to the path
           var ref
           if(this.childpath){
-            ref = this.config.fbConnection.fbRef.child(this.childpath)
-          }else{
+            ref = this.config.fbConnection.fbRef.child(this.childpath  == "msg.childpath" ? this.msg.childpath : this.childpath)  //Decide if we are using our input msg object or the string we were configured with
+          } else {
             ref = this.config.fbConnection.fbRef
           }
 
@@ -126,17 +131,32 @@ module.exports = function(RED) {
                   break;
               }
           }
-          ref.on(this.eventType, this.onFBValue, this.onFBError, this);
+
+          ref.on(this.eventType == "msg.eventType" ? this.msg.eventType : this.eventType, this.onFBValue, this.onFBError, this);
+
+
         }.bind(this);
 
         this.destroyListeners = function(){
-          this.ready = false;
+          if(this.ready == false)
+            return;
 
           // We need to unbind our callback, or we'll get duplicate messages when we redeploy
-          if(this.childpath)
-            this.config.fbConnection.fbRef.child(this.childpath).off(this.eventType, this.onFBValue, this);
-          else
-            this.config.fbConnection.fbRef.off(this.eventType, this.onFBValue, this);
+          if(this.msg == null){ //Not using in input mode - do what we've always done
+            if(this.childpath)
+              this.config.fbConnection.fbRef.child(this.childpath).off(this.eventType, this.onFBValue, this);
+            else
+              this.config.fbConnection.fbRef.off(this.eventType, this.onFBValue, this);
+          } else {  // We've been set by our input port
+            if(this.childpath)
+              this.config.fbConnection.fbRef.child(this.childpath  == "msg.childpath" ? this.msg.childpath : this.childpath).off(this.eventType == "msg.eventType" ? this.msg.eventType : this.eventType, this.onFBValue, this);
+            else
+              this.config.fbConnection.fbRef.off(this.eventType == "msg.eventType" ? this.msg.eventType : this.eventType, this.onFBValue, this);
+          }
+
+          this.ready = false;
+          this.msg == null;
+
         }.bind(this);
 
         this.setStatus = function(error){
@@ -190,12 +210,17 @@ module.exports = function(RED) {
 
         this.fbAuthorized = function(authData){
           // this.log("authorized")
+          this.authorized = true;
           this.setStatus();
-          this.registerListeners();
+
+          if((this.eventType != "msg.eventType" && this.childpath != "msg.childpath") || this.msg!= null)
+            this.registerListeners();
+
         }.bind(this)
 
         this.fbUnauthorized = function(){
           // this.log("unauthorized")
+          this.authorized = false;
           this.setStatus();
           this.destroyListeners();
         }.bind(this)
@@ -227,9 +252,55 @@ module.exports = function(RED) {
         //set initial state (depending on the deployment strategy, for newly deployed nodes, some of the events may not be refired...)
         this["fb" + this.config.fbConnection.lastEvent.capitalize()](this.config.fbConnection.lastEventData)  //Javascript is really friendly about sending arguments to functions...
 
+        this.on('input', function(msg) {
+          var eventType
+          if(eventType == "msg.eventType"){
+            if("eventType" in msg){
+              eventType = msg.eventType
+            } else {
+              this.error("Expected \"eventType\" property in msg object", msg)
+              return;
+            }
+          } else {
+            eventType = this.eventType
+          }
+
+          if(!(eventType in this.validEventTypes)){
+            this.error("Invalid msg.eventType property \"" + eventType + "\".  Expected one of the following: [\"" + Object.keys(this.validEventTypes).join("\", \"") + "\"].", msg)
+            return;
+          }
+
+          //Parse out msg.childpath
+          var childpath
+          if(this.childpath == "msg.childpath"){
+            if("childpath" in msg){
+              childpath = msg.childpath
+            }
+          }
+          childpath = childpath || "/"
+
+          msg.eventType = eventType;
+          msg.childpath = childpath || "/";
+
+          this.msg = msg;
+          console.log(msg.childpath)
+
+          //if we are authorized
+          //if we have listerners
+          if(this.authorized == true){
+            if(this.ready == true){ //We have listeners
+              this.destroyListeners();
+              this.registerListeners();
+            } else { // We don't have listeners
+              this.registerListeners();
+            }
+          }
+
+        }.bind(this));
+
         this.on('close', function() {
           this.destroyListeners();
-        });
+        }.bind(this));
 
     }
     RED.nodes.registerType('firebase.on', FirebaseOn);

@@ -138,12 +138,18 @@
         This event type is used for advanced Firebase applications designed to help work with large datasets without needing to download everything. See
         <a href="https://www.firebase.com/docs/rest/api/#section-query-parameters">https://www.firebase.com/docs/rest/api/#section-query-parameters</a>
         for more information.
+        If this method is used, the node will require an input to kick off the flow.
       </li><br />
       <li>
         <strong>.once([msg.eventType]):</strong>
         The <em>[msg.eventType]</em> allows for the passage of any of the event types listed above.
+        If this method is used, the node will require an input to kick off the flow.
       </li>
     </ul>
+
+    <p>Optional: This node will dynamically take an input (that is required to start generating Firebase events) if Child Path is set to <strong>msg.childpath</strong> or Event Type is set to <strong>msg.eventType</strong>.
+
+      Pass in the appropriate msg.properties if this advanced functionality is used.</p>
 
 
 </script>
@@ -193,6 +199,16 @@
           //Set the select's to the node-red hidden properties
           $("#eventType-select").val($("#node-input-eventType").val())
           $('#eventType-select').trigger('change');
+
+          //Set up autocomplete for Childpath field
+          var defaultChildpathValues = [
+            "msg.childpath",
+          ];
+
+          $('#node-input-childpath').autocomplete({
+            source: defaultChildpathValues,
+            minLength: 0
+          });
 
           //Most of this code is adapted from the switch node - https://raw.githubusercontent.com/node-red/node-red/master/nodes/core/logic/10-switch.html
           var operatorOptions = {
@@ -601,6 +617,8 @@
                 $( "#dialog" ).off("dialogresize",switchDialogResize);
             });
 
+            $('#eventType-select').change()
+
         },
 
         oneditsave: function() {
@@ -618,6 +636,12 @@
               r.value = $(this).find('input').is(':visible') ? $(this).find('input').val() : "";
               node.queries.push(r);
             });
+          }
+
+          if($('#eventType-select').val() == "shallow_query" || $('#eventType-select').val() == "msg.eventType" || $('#node-input-childpath').val() == "msg.childpath"){
+            this.inputs = 1;
+          } else {
+            this.inputs = 0;
           }
         }
     });

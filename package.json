@@ -25,7 +25,8 @@
       "firebase_once": "firebase/firebase_once.js",
       "firebase_on": "firebase/firebase_on.js",
       "firebase_ondisconnect": "firebase/firebase_ondisconnect.js",
-      "firebase_auth": "firebase/firebase_auth.js"
+      "firebase_auth": "firebase/firebase_auth.js",
+      "firebase_createuser": "firebase/firebase_createuser.js"
     }
   },
   "scripts": {

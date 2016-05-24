@@ -6,7 +6,7 @@ module.exports = function(RED) {
       RED.nodes.createNode(this, n);
 
       this.users = n.users;
-      this.firebase = n.firebase;
+      this.config = RED.nodes.getNode(n.firebaseconfig);
       this.completeInterval = null;
 
       this.createUser = function(fbRef, email, password, results) {
@@ -34,23 +34,21 @@ module.exports = function(RED) {
 
       this.on('input', function(msg) {
 
-        if (this.firebase == null) {
-          this.send({payload: "Must set Firebase in Create User node first"});
+        if (this.config == null || this.config.firebaseurl == null) {
+          // this.send({payload: "Must set Firebase in Create User node first"});
           console.error("Must set Firebase in Create User node first")
           return;
         }
 
         var users = (msg.users == null ? this.users : msg.users);
-        var fbRef = new Firebase('https://'+this.firebase+'.firebaseio.com');
+        // var fbRef = new Firebase('https://'+this.config.firebaseurl+'.firebaseio.com');
 
         //Building the results array is done in a dirty way that could be cleaned up with a Promise.loop
         var numUsers = users.length;
         var results = [];
 
         for (var i = 0; i < users.length; i++) {
-          // console.log("Creating user \""+users[i].email+"\" at Firebase \""+this.firebase+"\"...");
-          // this.send({payload: "Creating user \""+users[i].email+"\" at Firebase \""+this.firebase+"\"..."})
-          this.createUser(fbRef, users[i].email, users[i].password, results);
+          this.createUser(this.config.fbConnection.fbRef, users[i].email, users[i].password, results);
         }
 
         clearInterval(this.completeInterval);

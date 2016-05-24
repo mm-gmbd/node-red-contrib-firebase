@@ -110,52 +110,44 @@
 
 <script type="text/javascript">
   RED.nodes.registerType('firebase.createUser',{
-      category: 'firebase',      // the palette category
-      defaults: {             // defines the editable properties of the node
-        name: {value:''},   //  along with default values.
-        users: {value: [], required: true},
-        firebase: {value: '', required: true},
-        user: {'value': '', required: false},
-        password: {'value': '', required:false }
-      },
-      color: '#ffb37a',
-      inputs:1,               // set the number of inputs - only 0 or 1
-      outputs:1,              // set the number of outputs - 0 to n
-      // set the icon (held in icons dir below where you save the node)
-      icon: 'firebase.png',     // saved in  icons/myicon.png
+    category: 'firebase',      // the palette category
+    defaults: {             // defines the editable properties of the node
+      name: {value:''},   //  along with default values.
+      users: {value: [], required: true},
+      firebase: {value: '', required: true},
+      user: {'value': '', required: false},
+      password: {'value': '', required:false }
+    },
+    color: '#ffb37a',
+    inputs:1,               // set the number of inputs - only 0 or 1
+    outputs:1,              // set the number of outputs - 0 to n
+    // set the icon (held in icons dir below where you save the node)
+    icon: 'firebase.png',     // saved in  icons/myicon.png
 
-      paletteLabel: "firebase.createUser()",
+    paletteLabel: "firebase.createUser()",
 
-      label: function() {     // sets the default label contents
+    label: function() {     // sets the default label contents
+      return (this.name && this.name !== '' ? this.name : "Create User(s)")
+    },
 
-        return (this.name && this.name !== '' ? this.name : "Create User(s)")
+    labelStyle: function() { // sets the class to apply to the label
+        return this.name?'node_label_italic':'';
+    },
 
-      },
+    //TODO: there is all kinds of validation that needs to be done to ensure only proper combinations of things are allowed...
+    oneditprepare: function() {
+      //Update the eventType node-red property when the value is changed...
 
-      labelStyle: function() { // sets the class to apply to the label
-          return this.name?'node_label_italic':'';
-      },
+      $('#node-input-firebase').val(this.firebase);
+      $('#node-input-email').val(this.user);
+      $('#node-input-password').val('');
+    },
 
-      oneditprepare: function() { //TODO: there is all kinds of validation that needs to be done to ensure only proper combinations of things are allowed...
-        //Update the eventType node-red property when the value is changed...
+    oneditsave: function() {
+      var node = this;
 
-        $('#node-input-firebase').val(this.firebase);
-        $('#node-input-email').val(this.user);
-        $('#node-input-password').val('');
-
-      },
-
-      oneditsave: function() {
-        var node = this;
-
-        node.formFirebase = $('#node-input-firebase').val();
-        node.formUser = $('#node-input-email').val();
-        node.formPassword = $('#node-input-password').val();
-
-        node.users = [];
-        node.users.push({email: node.formUser, password: node.formPassword});
-        node.firebase = node.formFirebase;
-        node.user = node.formUser;
-      }
+      node.users = [];
+      node.users.push({email: node.user, password: node.password});
+    }
   });
 </script>

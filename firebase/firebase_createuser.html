@@ -1,0 +1,161 @@
+<script type="text/x-red" data-template-name="firebase.createUser">
+
+    <div class="form-row">
+        <label for="node-input-firebase"><i class="fa fa-sitemap"></i> Firebase</label>
+        <input class="input-append-left" type="text" id="node-input-firebase" placeholder="Firebase Name">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-email"><i class="fa fa-sitemap"></i> Email</label>
+        <input class="input-append-left" type="text" id="node-input-email" placeholder="Email Address">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-password"><i class="fa fa-sitemap"></i> Password</label>
+        <input class="input-append-left" type="text" id="node-input-password" placeholder="Password">
+    </div>
+
+    <!-- By convention, most nodes have a 'name' property. The following div -->
+    <!-- provides the necessary field. Should always be the last option      -->
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="firebase.createUser">
+  <!-- data-help-name identifies the node type this help is for             -->
+  <!-- This content appears in the Info sidebar when a node is selected     -->
+  <!-- The first <p> is used as the pop-up tool tip when hovering over a    -->
+  <!-- node in the palette.                                                 -->
+  <p>Generate messages for Firebase .once() events.</p>
+
+  <p>Supply a Firebase configuration and this node will watch for any changes at that location and generate messages.</p>
+
+  <p>This node outputs an object called <b>msg</b> containing <b>msg.href</b>, <b>msg.key</b>, and
+  <b>msg.payload</b>. Depending on the event type and data available <b>msg.priority</b>, <b>msg.pushIDTimestamp</b>
+  and <b>msg.previousChildName</b> may also be set:
+  <ul>
+    <li>
+      <strong>msg.payload</strong> - the data returned from Firebase
+      (The type of msg.payload depends on the data at that location)
+    </li><br />
+    <li>
+      <strong>msg.href</strong> - the url of the data
+    </li><br />
+    <li>
+      <strong>msg.key</strong> - the key of the Firebase data
+    </li><br />
+    <li>
+      <strong><em>msg.priority</em></strong> - <em>(optional)</em> the priority of the Firebase data
+    </li><br />
+    <li>
+       <strong><em>msg.pushIDTimestamp</em></strong> - <em>(optional)</em> the timestamp as decoded from the key of the event, which is assumed to be a Firebase Push ID (this will be available if "child_added", "child_changed", "child_moved", or "child_removed" is selected as the event)
+    </li><br />
+    <li>
+      <strong><em>msg.previousChildName</em></strong> - <em>(optional)</em> the key for the previous child of the Firebase data (this will be available, for ordering purposes, if "child_added", "child_changed", "child_moved", or "child_removed" is selected as the event)
+    </li>
+  </ul>
+
+  <p>This node can be backed by several different Firebase API methods:</p>
+  <!-- https://www.firebase.com/docs/web/guide/retrieving-data.html -->
+   <ul>
+     <li>
+       <strong>.once("value"):</strong>
+       The <em>value</em> event is used to read a static snapshot of the contents at a given path, as they existed at the time of the read event.
+       The flow is triggered once with the initial data (assuming the fire last known data at start box is checked) and again every time
+       the data changes. <em>msg.payload</em> is passed a snapshot containing all data at that location, including child data.
+     </li><br />
+     <li>
+       <strong>.once("child_added"):</strong>
+       The <em>child_added</em> event is typically used when retrieving a list of items in Firebase.
+       Unlike <em>value</em> events which returns the entire contents of the location, <em>child_added</em>
+       is triggered once for each existing child and then again every time a new child is added to the specified path.
+       <em>msg.payload</em> is passed a snapshot containing the new child's data. <!-- ' -->
+     </li><br />
+     <li>
+       <strong>.once("child_changed"):</strong>
+       The <em>child_changed</em> event is triggered any time a child node is modified.
+       This includes any modifications to descendants of the child node. It is typically used in conjunction with
+       <em>child_added</em> and <em>child_removed</em> to respond to changes to a list of items.
+       <em>msg.payload</em> contains the updated data for the child.
+     </li><br />
+     <li>
+       <strong>.once("child_removed"):</strong>
+       The <em>child_removed</em> event is triggered when an immediate child is removed.
+       It is typically used in conjunction with <em>child_added</em> and <em>child_changed</em>.
+       <em>msg.payload</em> contains the data for the removed child.
+     </li><br />
+     <li>
+       <strong>.once("child_moved"):</strong>
+       The <em>child_moved</em> event is used when working with ordered data.
+       This event type is used for advanced Firebase applications see
+       <a href="https://www.firebase.com/docs/web/guide/retrieving-data.html#section-ordered-data">https://www.firebase.com/docs/web/guide/retrieving-data.html#section-ordered-data</a>
+       for more information.
+     </li><br />
+     <li>
+       <strong>.once("shallow_query"):</strong>
+       The <em>shallow_query</em> only receives the node keys at the supplied Firebase path. Currently, it cannot be paired with other query parameters.
+       This event type is used for advanced Firebase applications designed to help work with large datasets without needing to download everything. See
+       <a href="https://www.firebase.com/docs/rest/api/#section-query-parameters">https://www.firebase.com/docs/rest/api/#section-query-parameters</a>
+       for more information.
+     </li><br />
+   </ul>
+
+   <p>By checking the repeat request if null, the node will attempt up to 100 times to poll the location for a non-null value.</p>
+
+   <p>Optional: <strong>msg.childpath</strong> is the name of a message property that can be used to dynamically set the .child() on the Firebase URL.  This requires that the <em>childpath</em> property is set to <em>msg.childpath</em> in the node's edit dialog box.</p>
+
+ </script>
+
+<script type="text/javascript">
+  RED.nodes.registerType('firebase.createUser',{
+      category: 'firebase',      // the palette category
+      defaults: {             // defines the editable properties of the node
+        name: {value:''},   //  along with default values.
+        users: {value: [], required: true},
+        firebase: {value: '', required: true},
+        user: {'value': '', required: false},
+        password: {'value': '', required:false }
+      },
+      color: '#ffb37a',
+      inputs:1,               // set the number of inputs - only 0 or 1
+      outputs:1,              // set the number of outputs - 0 to n
+      // set the icon (held in icons dir below where you save the node)
+      icon: 'firebase.png',     // saved in  icons/myicon.png
+
+      paletteLabel: "firebase.createUser()",
+
+      label: function() {     // sets the default label contents
+
+        return (this.name && this.name !== '' ? this.name : "Create User(s)")
+
+      },
+
+      labelStyle: function() { // sets the class to apply to the label
+          return this.name?'node_label_italic':'';
+      },
+
+      oneditprepare: function() { //TODO: there is all kinds of validation that needs to be done to ensure only proper combinations of things are allowed...
+        //Update the eventType node-red property when the value is changed...
+
+        $('#node-input-firebase').val(this.firebase);
+        $('#node-input-email').val(this.user);
+        $('#node-input-password').val('');
+
+      },
+
+      oneditsave: function() {
+        var node = this;
+
+        node.formFirebase = $('#node-input-firebase').val();
+        node.formUser = $('#node-input-email').val();
+        node.formPassword = $('#node-input-password').val();
+
+        node.users = [];
+        node.users.push({email: node.formUser, password: node.formPassword});
+        node.firebase = node.formFirebase;
+        node.user = node.formUser;
+      }
+  });
+</script>
